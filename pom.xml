@@ -8,5 +8,21 @@
     <artifactId>opencv</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <properties>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>cl.telematic</groupId>
+            <artifactId>opencv</artifactId>
+            <version>2.4.10</version>
+        </dependency>
+    </dependencies>
+
 
 </project>
