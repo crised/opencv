@@ -29,6 +29,7 @@ public class Local {
 
         VideoCapture vCap = new VideoCapture();
         vCap.open(videoStreamAddress);
+       // vCap.open(0);
         if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
 
         double frame_width = vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH);
@@ -39,21 +40,22 @@ public class Local {
         //Thread.sleep(1000);
         //Highgui.imwrite();
 
-        BackgroundSubtractorMOG2 bS = new BackgroundSubtractorMOG2(500, 16, false);
+        BackgroundSubtractorMOG2 bS = new BackgroundSubtractorMOG2();
 
 
         while (true) {
             //Thread.sleep(delay);
             if (!vCap.read(frame)) LOG.error("Couldn't read Video Stream");
             Mat mask = new Mat();
-            Mat blur = new Mat();
-            Imgproc.blur(frame,blur,new Size(10.0,10.0));
 
 
+            bS.apply(frame, mask, -1);
 
-            bS.apply(blur, mask);
+            //Imgproc.GaussianBlur(mask, blured_mask, new Size(5, 5), 3.5, 3.5); //With this line works good.
+            //Imgproc.threshold(blured_mask, mask, 10, 255, Imgproc.THRESH_BINARY);
+
             long time = System.currentTimeMillis();
-            Highgui.imwrite("img/" + time + ".jpg", blur);
+            Highgui.imwrite("img/" + time + ".jpg", frame);
             Highgui.imwrite("img/" + time + "m.jpg", mask);
         }
     }
