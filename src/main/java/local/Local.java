@@ -48,11 +48,12 @@ public class Local {
             if (!vCap.read(frame)) LOG.error("Couldn't read Video Stream");
             Mat mask = new Mat();
 
+            Imgproc.blur(frame,frame,new Size(3.0,3.0));
 
             bS.apply(frame, mask, -1);
 
-            //Imgproc.GaussianBlur(mask, blured_mask, new Size(5, 5), 3.5, 3.5); //With this line works good.
-            //Imgproc.threshold(blured_mask, mask, 10, 255, Imgproc.THRESH_BINARY);
+            //Imgproc.GaussianBlur(mask, mask, new Size(5, 5), 3.5, 3.5); //With this line works good.
+           // Imgproc.threshold(mask, mask, 10, 255, Imgproc.THRESH_BINARY);
 
             long time = System.currentTimeMillis();
             Highgui.imwrite("img/" + time + ".jpg", frame);
