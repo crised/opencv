@@ -1,11 +1,10 @@
 package local;
 
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
+import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,12 +19,13 @@ public class Local {
 
     private String videoStreamAddress = "http://192.168.1.34/videostream.cgi?user=admin&pwd=admin";
     Mat frame;
+    int delay;
 
     public Local() {
         frame = new Mat();
     }
 
-    public void capture() throws Exception{
+    public void capture() throws Exception {
 
         VideoCapture vCap = new VideoCapture();
         vCap.open(videoStreamAddress);
@@ -35,16 +35,27 @@ public class Local {
         double frame_height = vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT);
         LOG.info("Frame Width " + frame_width);
         LOG.info("Frame Height " + frame_height);
-        Thread.sleep(1000);
 
-        while(true){
+        //Thread.sleep(1000);
+        //Highgui.imwrite();
 
-            vCap.read(frame);
-            LOG.info(frame.dump());
+        BackgroundSubtractorMOG2 bS = new BackgroundSubtractorMOG2(500, 16, false);
 
+
+        while (true) {
+            //Thread.sleep(delay);
+            if (!vCap.read(frame)) LOG.error("Couldn't read Video Stream");
+            Mat mask = new Mat();
+            Mat blur = new Mat();
+            Imgproc.blur(frame,blur,new Size(10.0,10.0));
+
+
+
+            bS.apply(blur, mask);
+            long time = System.currentTimeMillis();
+            Highgui.imwrite("img/" + time + ".jpg", blur);
+            Highgui.imwrite("img/" + time + "m.jpg", mask);
         }
-
-
     }
 
     public void init() {
