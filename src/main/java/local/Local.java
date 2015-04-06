@@ -16,12 +16,7 @@ public class Local {
     public void capture(){
 
         VideoCapture videoCapture = new VideoCapture();
-        if(!videoCapture.open(videoStreamAddress)){
-            System.out.println("ouch");
-        } else {
-            videoCapture.release();
-            System.out.println("done");
-        }
+        if(!videoCapture.open(videoStreamAddress))            System.out.println("ouch");
 
 
     }
