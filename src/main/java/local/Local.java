@@ -4,24 +4,50 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
+import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static utils.Consts.CL_TELEMATIC;
 
 /**
  * Created by crised on 4/6/15.
  */
 public class Local {
 
-    private String videoStreamAddress="http://192.168.1.34/videostream.cgi?user=admin&pwd=admin";
+    private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-    public void capture(){
+    private String videoStreamAddress = "http://192.168.1.34/videostream.cgi?user=admin&pwd=admin";
+    Mat frame;
 
-        VideoCapture videoCapture = new VideoCapture();
-        if(!videoCapture.open(videoStreamAddress))            System.out.println("ouch");
+    public Local() {
+        frame = new Mat();
+    }
+
+    public void capture() throws Exception{
+
+        VideoCapture vCap = new VideoCapture();
+        vCap.open(videoStreamAddress);
+        if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
+
+        double frame_width = vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH);
+        double frame_height = vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT);
+        LOG.info("Frame Width " + frame_width);
+        LOG.info("Frame Height " + frame_height);
+        Thread.sleep(1000);
+
+        while(true){
+
+            vCap.read(frame);
+            LOG.info(frame.dump());
+
+        }
 
 
     }
 
-    public void init(){
+    public void init() {
         System.out.println("Welcome to OpenCV " + Core.VERSION + "Lib Name: " + Core.NATIVE_LIBRARY_NAME);
         Mat m = new Mat(5, 10, CvType.CV_8UC1, new Scalar(0));
         System.out.println("OpenCV Mat: " + m);
