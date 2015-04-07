@@ -27,6 +27,7 @@ public class SimpleSample {
     public static void main(String[] args) throws Exception{
 
         Local local = new Local();
+        local.init();
         local.capture();
     }
 
