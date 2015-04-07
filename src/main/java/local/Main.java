@@ -12,7 +12,7 @@ import static utils.Consts.CL_TELEMATIC;
 /**
  * Created by crised on 4/2/15.
  */
-public class SimpleSample {
+public class Main {
 
     //-Djava.library.path=/opt/opencv-2.4.10/build/lib
     //JAVA_HOME to correct jvm
