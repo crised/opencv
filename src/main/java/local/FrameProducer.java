@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static utils.Consts.*;
@@ -26,6 +27,7 @@ public class FrameProducer implements Runnable {
     private long captureDelay, capturePixelScore, lastPassed;
     private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
+    private NavigableMap<Long, Mat> timeSlotMap;
 
 
     public FrameProducer(LinkedBlockingQueue queue) {
@@ -37,22 +39,29 @@ public class FrameProducer implements Runnable {
         this.cvCore = new Core();
         this.bS = new BackgroundSubtractorMOG2();
         constructBackOff();
+        this.timeSlotMap = new TreeMap<>();
+
 
     }
 
     @Override
     public void run() {
 
-        LOG.info("Producer started");
-        org.opencv.highgui.VideoCapture vCap = new org.opencv.highgui.VideoCapture();
-        vCap.open(IP_STREAM_ADDRESS);
-        // vCap.open(0); //usb camera
-        if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
-        LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
-        LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+        try {
 
-        while (true) {
-            try {
+            LOG.info("Producer started");
+            org.opencv.highgui.VideoCapture vCap = new org.opencv.highgui.VideoCapture();
+            vCap.open(IP_STREAM_ADDRESS);
+            // vCap.open(0); //usb camera
+            if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
+            LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
+            LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+
+            //initial conditions
+            this.lastPassed = System.currentTimeMillis();
+            calculateDelay();
+
+            while (true) {
 
                 Thread.sleep(REFRESH_RATE_DELAY);
                 if (!vCap.read(frame)) {
@@ -65,27 +74,32 @@ public class FrameProducer implements Runnable {
                 capturePixelScore = cvCore.countNonZero(mask);
 
                 if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
+                    //Candidate frames
+                    LOG.info("adding candidate frames");
+                    this.timeSlotMap.put(capturePixelScore, frame);
+
                     if (System.currentTimeMillis() - lastPassed > captureDelay) {
+                        //Need to pick winner frame  for the past slot
                         MatOfByte jpg = new MatOfByte();
-                        Highgui.imencode(".jpg", frame, jpg);
+                        Highgui.imencode(".jpg", timeSlotMap.lastEntry().getValue(), jpg);
                         if (!queue.offer(new Item(jpg.toArray(), capturePixelScore)))
                             LOG.error("Queue is full, lost frame!");
                         calculateDelay();
                         lastPassed = System.currentTimeMillis();
-                        LOG.info("Score: " + String.valueOf(capturePixelScore) + ", Current Delay: " + captureDelay / 1000 + "s.");
-                    } else {
-                        LOG.info("Discarding frame captured...");
+                        this.timeSlotMap.clear();
+                        LOG.info("Score: " + String.valueOf(timeSlotMap.lastKey()) + ", Current Delay: " + captureDelay / 1000 + "s.");
                     }
                 }
-
-            } catch (InterruptedException e) {
-                LOG.error("Thread Exception");
-            } catch (Exception e) {
-                LOG.error("Other Exception");
             }
 
+        } catch (InterruptedException e) {
+            LOG.error("Thread Exception");
+        } catch (Exception e) {
+            LOG.error("Other Exception");
         }
+
     }
+
 
     private void calculateDelay() throws Exception {
         //2 conditions to reset the timer.
