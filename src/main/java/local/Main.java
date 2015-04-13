@@ -1,9 +1,6 @@
 package local;
 
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +24,7 @@ public class Main {
     public static void main(String[] args) throws Exception{
 
         Local local = new Local();
-        local.init();
+        //local.init();
         local.capture();
     }
 

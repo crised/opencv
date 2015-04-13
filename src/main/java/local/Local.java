@@ -1,5 +1,6 @@
 package local;
 
+import com.google.api.client.util.ExponentialBackOff;
 import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
@@ -8,7 +9,11 @@ import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static utils.Consts.CL_TELEMATIC;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static utils.Consts.*;
 
 /**
  * Created by crised on 4/6/15.
@@ -17,49 +22,94 @@ public class Local {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-    private String videoStreamAddress = "http://192.168.1.34/videostream.cgi?user=admin&pwd=admin";
-    Mat frame;
-    int delay;
+    private Mat frame, blur, mask;
+    private Core cvCore;
+    private long captureDelay, capturePixelScore;
+    private ExponentialBackOff backOff;
+    private BackgroundSubtractorMOG2 bS;
+
 
     public Local() {
-        frame = new Mat();
+
+        this.frame = new Mat();
+        this.blur = new Mat();
+        this.mask = new Mat();
+        this.cvCore = new Core();
+        this.bS = new BackgroundSubtractorMOG2();
+
+        ExponentialBackOff.Builder builder = new ExponentialBackOff.Builder();
+        builder.setInitialIntervalMillis(EXPONENTIAL_INIT_INTERVAL);
+        builder.setMultiplier(EXPONENTIAL_MULTIPLIER);
+        builder.setRandomizationFactor(EXPONENTIAL_RANDOMIZATION);
+        builder.setMaxElapsedTimeMillis(EXPONENTIAL_MAX_ELAPSED_TIME);
+        builder.setMaxIntervalMillis(EXPONENTIAL_MAX_INTERVAL_MILLIS);
+
+        this.backOff = builder.build();
+
     }
 
-    public void capture() throws Exception {
+    public void capture() {
 
         VideoCapture vCap = new VideoCapture();
-        vCap.open(videoStreamAddress);
-       // vCap.open(0);
+        vCap.open(IP_STREAM_ADDRESS);
+        // vCap.open(0); //usb camera
         if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
-
-        double frame_width = vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH);
-        double frame_height = vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT);
-        LOG.info("Frame Width " + frame_width);
-        LOG.info("Frame Height " + frame_height);
-
-        //Thread.sleep(1000);
-        //Highgui.imwrite();
-
-        BackgroundSubtractorMOG2 bS = new BackgroundSubtractorMOG2();
-
+        LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
+        LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
 
         while (true) {
-            //Thread.sleep(delay);
-            if (!vCap.read(frame)) LOG.error("Couldn't read Video Stream");
-            Mat mask = new Mat();
+            try {
 
-            Imgproc.blur(frame,frame,new Size(3.0,3.0));
+                Thread.sleep(REFRESH_RATE_DELAY);
+                if (!vCap.read(frame)) {
+                    LOG.error("Couldn't read Video Stream");
+                    Thread.sleep(5000);
+                }
 
-            bS.apply(frame, mask, -1);
+                Imgproc.blur(frame, blur, new Size(3.0, 3.0));
+                bS.apply(blur, mask, -1);
+                capturePixelScore = cvCore.countNonZero(mask);
 
-            //Imgproc.GaussianBlur(mask, mask, new Size(5, 5), 3.5, 3.5); //With this line works good.
-           // Imgproc.threshold(mask, mask, 10, 255, Imgproc.THRESH_BINARY);
+                if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
+                    Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_S_X");
+                    String timestamp = formatter.format(new Date());
+                    Highgui.imwrite("img/" + timestamp + ".jpg", frame);
+                    Highgui.imwrite("img/" + timestamp + "m.jpg", mask);
 
-            long time = System.currentTimeMillis();
-            Highgui.imwrite("img/" + time + ".jpg", frame);
-            Highgui.imwrite("img/" + time + "m.jpg", mask);
+                    calculateDelay();
+                    LOG.info(timestamp + ": " + String.valueOf(capturePixelScore) + "Delay: " + captureDelay);
+                    Thread.sleep(captureDelay);
+                }
+
+            } catch (InterruptedException e) {
+                LOG.error("Thread Exception");
+            } catch (Exception e) {
+                LOG.error("Other Exception");
+            }
+
         }
     }
+
+    private void calculateDelay() throws Exception {
+
+
+        //2 conditions to reset the timer.
+        //1st Contition: Too much time has passed.
+        if (backOff.getElapsedTimeMillis() >= TIME_BETWEEN_CAMERA_EVENTS) {
+            LOG.info("Camera event has passed, resetting timer.");
+            backOff.reset();
+        }
+
+        if (backOff.nextBackOffMillis() == ExponentialBackOff.STOP) {
+            LOG.info("Max Interval has been reached, resetting.");
+            backOff.reset();
+        }
+
+        this.captureDelay = backOff.nextBackOffMillis();
+
+
+    }
+
 
     public void init() {
         System.out.println("Welcome to OpenCV " + Core.VERSION + "Lib Name: " + Core.NATIVE_LIBRARY_NAME);
