@@ -3,22 +3,17 @@ package local;
 import com.google.api.client.util.ExponentialBackOff;
 import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
-import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import static utils.Consts.*;
 
 /**
  * Created by crised on 4/6/15.
  */
-public class Local {
+public class FrameCapture {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
@@ -29,28 +24,20 @@ public class Local {
     private BackgroundSubtractorMOG2 bS;
 
 
-    public Local() {
+    public FrameCapture() {
 
         this.frame = new Mat();
         this.blur = new Mat();
         this.mask = new Mat();
         this.cvCore = new Core();
         this.bS = new BackgroundSubtractorMOG2();
-
-        ExponentialBackOff.Builder builder = new ExponentialBackOff.Builder();
-        builder.setInitialIntervalMillis(EXPONENTIAL_INIT_INTERVAL);
-        builder.setMultiplier(EXPONENTIAL_MULTIPLIER);
-        builder.setRandomizationFactor(EXPONENTIAL_RANDOMIZATION);
-        builder.setMaxElapsedTimeMillis(EXPONENTIAL_MAX_ELAPSED_TIME);
-        builder.setMaxIntervalMillis(EXPONENTIAL_MAX_INTERVAL_MILLIS);
-
-        this.backOff = builder.build();
+        constructBackOff();
 
     }
 
     public void capture() {
 
-        VideoCapture vCap = new VideoCapture();
+        org.opencv.highgui.VideoCapture vCap = new org.opencv.highgui.VideoCapture();
         vCap.open(IP_STREAM_ADDRESS);
         // vCap.open(0); //usb camera
         if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
@@ -63,7 +50,7 @@ public class Local {
                 Thread.sleep(REFRESH_RATE_DELAY);
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
-                    Thread.sleep(5000);
+                    Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
                 Imgproc.blur(frame, blur, new Size(3.0, 3.0));
@@ -71,13 +58,15 @@ public class Local {
                 capturePixelScore = cvCore.countNonZero(mask);
 
                 if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
-                    Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_S_X");
-                    String timestamp = formatter.format(new Date());
-                    Highgui.imwrite("img/" + timestamp + ".jpg", frame);
-                    Highgui.imwrite("img/" + timestamp + "m.jpg", mask);
+
+                    byte[] return_buff = new byte[(int) (frame.total() *
+                            frame.channels())];
+                    frame.get(0, 0, return_buff);
+
+                    new Thread(new Upload(return_buff)).start();
 
                     calculateDelay();
-                    LOG.info(timestamp + ": " + String.valueOf(capturePixelScore) + "Delay: " + captureDelay);
+                    LOG.info("Score: " + String.valueOf(capturePixelScore) + ", Delay: " + captureDelay);
                     Thread.sleep(captureDelay);
                 }
 
@@ -91,8 +80,6 @@ public class Local {
     }
 
     private void calculateDelay() throws Exception {
-
-
         //2 conditions to reset the timer.
         //1st Contition: Too much time has passed.
         if (backOff.getElapsedTimeMillis() >= TIME_BETWEEN_CAMERA_EVENTS) {
@@ -104,8 +91,18 @@ public class Local {
             LOG.info("Max Interval has been reached, resetting.");
             backOff.reset();
         }
-
         this.captureDelay = backOff.nextBackOffMillis();
+    }
+
+    private void constructBackOff() {
+
+        ExponentialBackOff.Builder builder = new ExponentialBackOff.Builder();
+        builder.setInitialIntervalMillis(EXPONENTIAL_INIT_INTERVAL);
+        builder.setMultiplier(EXPONENTIAL_MULTIPLIER);
+        builder.setRandomizationFactor(EXPONENTIAL_RANDOMIZATION);
+        builder.setMaxElapsedTimeMillis(EXPONENTIAL_MAX_ELAPSED_TIME);
+        builder.setMaxIntervalMillis(EXPONENTIAL_MAX_INTERVAL_MILLIS);
+        this.backOff = builder.build();
 
 
     }

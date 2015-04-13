@@ -46,17 +46,33 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.9.24</version>
+            <version>1.9.30</version>
+
         </dependency>
 
         <!--Exponential BackOff Algorithm -->
-        <!--Google APIs Client Library For Java -->
-
+        <!--Google APIs Client Library For Java-->
         <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
             <version>1.20.0</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jackson-core</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-databind</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>jackson-annotations</artifactId>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
+
 
 
 
@@ -71,7 +87,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>local.Main</mainClass>
+                            <mainClass>frameCapture.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

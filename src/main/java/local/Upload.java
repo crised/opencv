@@ -1,42 +1,49 @@
 package local;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import static utils.Consts.*;
 
 /**
  * Created by crised on 4/13/15.
  */
-public class Upload implements Runnable{
+public class Upload implements Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger("app");
+    private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private AmazonS3 s3client;
+    private byte[] data;
+    private String filename;
 
 
-
-    public NetworkSide(Reader.CaptureResult captureResult) {
+    public Upload(byte[] data) {
         s3client = new AmazonS3Client(new ProfileCredentialsProvider());
-        this.captureResult = captureResult;
-        this.fid = captureResult.image;
-        convert();
-    }
+        this.data = data;
+        Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_S_X");
+        this.filename = formatter.format(new Date()) + ".jpg";
 
-    private void convert() {
-        try {
-            Engine engine = UareUGlobal.GetEngine();
-            this.fmd = engine.CreateFmd(fid, Fmd.Format.ISO_19794_2_2005);
-        } catch (UareUException e) {
-            LOG.error("Couldn't convert Minutiae");
-        }
     }
 
     private PutObjectRequest getPutObjectRequest() {
 
         // byte[] data = fid.getData(); //Easy Change
-        byte[] data = fmd.getData();
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentLength(data.length);
         return new PutObjectRequest(BUCKET_NAME,
-                String.valueOf(System.currentTimeMillis()),
+                filename,
                 new ByteArrayInputStream(data),
                 objectMetadata);
     }
@@ -45,8 +52,9 @@ public class Upload implements Runnable{
     public void run() {
 
         try {
-            LOG.info("Uploading a new object, capture quality: " + captureResult.quality.toString());
+            LOG.info("Uploading image: " + filename);
             s3client.putObject(getPutObjectRequest());
+            //Consider saving the image in case of network error.
 
         } catch (AmazonServiceException ase) {
             LOG.error("Caught an AmazonServiceException, which " +
@@ -70,4 +78,4 @@ public class Upload implements Runnable{
 
 
 }
-}
+

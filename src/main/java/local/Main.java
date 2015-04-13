@@ -23,9 +23,9 @@ public class Main {
 
     public static void main(String[] args) throws Exception{
 
-        Local local = new Local();
-        //local.init();
-        local.capture();
+        FrameCapture frameCapture = new FrameCapture();
+        //frameCapture.init();
+        frameCapture.capture();
     }
 
 }
