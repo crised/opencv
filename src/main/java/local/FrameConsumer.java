@@ -11,51 +11,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static utils.Consts.*;
 
 /**
  * Created by crised on 4/13/15.
  */
-public class Upload implements Runnable {
+public class FrameConsumer implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
+    private final LinkedBlockingQueue queue;
     private AmazonS3 s3client;
-    private byte[] data;
-    private String filename;
 
-
-    public Upload(byte[] data) {
+    public FrameConsumer(LinkedBlockingQueue queue) {
+        this.queue = queue;
         s3client = new AmazonS3Client(new ProfileCredentialsProvider());
-        this.data = data;
-        Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_S_X");
-        this.filename = formatter.format(new Date()) + ".jpg";
-
-    }
-
-    private PutObjectRequest getPutObjectRequest() {
-
-        // byte[] data = fid.getData(); //Easy Change
-        ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentLength(data.length);
-        return new PutObjectRequest(BUCKET_NAME,
-                filename,
-                new ByteArrayInputStream(data),
-                objectMetadata);
     }
 
     @Override
     public void run() {
 
         try {
-            LOG.info("Uploading image: " + filename);
-            s3client.putObject(getPutObjectRequest());
-            //Consider saving the image in case of network error.
-
+            LOG.info("Consumer started");
+            while (true) {
+                Item item = (Item) queue.take(); //blocking method
+                LOG.info("Uploading image: " + item.getFileName());
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(item.getData().length);
+                s3client.putObject(new PutObjectRequest(BUCKET_NAME,
+                        item.getFileName(),
+                        new ByteArrayInputStream(item.getData()),
+                        objectMetadata));
+                //Consider saving the image in case of network error.
+            }
         } catch (AmazonServiceException ase) {
             LOG.error("Caught an AmazonServiceException, which " +
                     "means your request made it " +
@@ -73,9 +63,13 @@ public class Upload implements Runnable {
                     "communicate with S3, " +
                     "such as not being able to access the network.");
             LOG.error("Error Message: " + ace.getMessage());
+        } catch (InterruptedException e) {
+            LOG.error("Probably interrupted queue", e);
+
+        } catch (Exception e) {
+            LOG.error("FrameConsumer error", e);
         }
     }
-
 
 }
 

@@ -8,24 +8,29 @@ import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
+import java.util.concurrent.LinkedBlockingQueue;
+
 import static utils.Consts.*;
 
 /**
  * Created by crised on 4/6/15.
  */
-public class FrameCapture {
+public class FrameProducer implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
+    private final LinkedBlockingQueue queue;
     private Mat frame, blur, mask;
     private Core cvCore;
-    private long captureDelay, capturePixelScore;
+    private long captureDelay, capturePixelScore, lastPassed;
     private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
 
 
-    public FrameCapture() {
+    public FrameProducer(LinkedBlockingQueue queue) {
 
+        this.queue = queue;
         this.frame = new Mat();
         this.blur = new Mat();
         this.mask = new Mat();
@@ -35,8 +40,10 @@ public class FrameCapture {
 
     }
 
-    public void capture() {
+    @Override
+    public void run() {
 
+        LOG.info("Producer started");
         org.opencv.highgui.VideoCapture vCap = new org.opencv.highgui.VideoCapture();
         vCap.open(IP_STREAM_ADDRESS);
         // vCap.open(0); //usb camera
@@ -58,16 +65,17 @@ public class FrameCapture {
                 capturePixelScore = cvCore.countNonZero(mask);
 
                 if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
-
-                    byte[] return_buff = new byte[(int) (frame.total() *
-                            frame.channels())];
-                    frame.get(0, 0, return_buff);
-
-                    new Thread(new Upload(return_buff)).start();
-
-                    calculateDelay();
-                    LOG.info("Score: " + String.valueOf(capturePixelScore) + ", Delay: " + captureDelay);
-                    Thread.sleep(captureDelay);
+                    if (System.currentTimeMillis() - lastPassed > captureDelay) {
+                        MatOfByte jpg = new MatOfByte();
+                        Highgui.imencode(".jpg", frame, jpg);
+                        if (!queue.offer(new Item(jpg.toArray(), capturePixelScore)))
+                            LOG.error("Queue is full, lost frame!");
+                        calculateDelay();
+                        lastPassed = System.currentTimeMillis();
+                        LOG.info("Score: " + String.valueOf(capturePixelScore) + ", Current Delay: " + captureDelay / 1000 + "s.");
+                    } else {
+                        LOG.info("Discarding frame captured...");
+                    }
                 }
 
             } catch (InterruptedException e) {
@@ -86,16 +94,14 @@ public class FrameCapture {
             LOG.info("Camera event has passed, resetting timer.");
             backOff.reset();
         }
-
+        this.captureDelay = backOff.getCurrentIntervalMillis();
         if (backOff.nextBackOffMillis() == ExponentialBackOff.STOP) {
             LOG.info("Max Interval has been reached, resetting.");
             backOff.reset();
         }
-        this.captureDelay = backOff.nextBackOffMillis();
     }
 
     private void constructBackOff() {
-
         ExponentialBackOff.Builder builder = new ExponentialBackOff.Builder();
         builder.setInitialIntervalMillis(EXPONENTIAL_INIT_INTERVAL);
         builder.setMultiplier(EXPONENTIAL_MULTIPLIER);
@@ -103,19 +109,7 @@ public class FrameCapture {
         builder.setMaxElapsedTimeMillis(EXPONENTIAL_MAX_ELAPSED_TIME);
         builder.setMaxIntervalMillis(EXPONENTIAL_MAX_INTERVAL_MILLIS);
         this.backOff = builder.build();
-
-
     }
 
 
-    public void init() {
-        System.out.println("Welcome to OpenCV " + Core.VERSION + "Lib Name: " + Core.NATIVE_LIBRARY_NAME);
-        Mat m = new Mat(5, 10, CvType.CV_8UC1, new Scalar(0));
-        System.out.println("OpenCV Mat: " + m);
-        Mat mr1 = m.row(1);
-        mr1.setTo(new Scalar(1));
-        Mat mc5 = m.col(5);
-        mc5.setTo(new Scalar(5));
-        System.out.println("OpenCV Mat data:\n" + m.dump());
-    }
 }
