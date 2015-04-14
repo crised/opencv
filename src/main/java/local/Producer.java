@@ -80,10 +80,13 @@ public class Producer implements Runnable {
                         //no need to do backoff
                         getNextTimeSlot(false);
                     } else {
-                        float mapSize = candidatesMap.size();
-                        int middle =  Math.round(mapSize/2);
-                        winnerFrameScore = candidatesMap.ge
 
+                        Iterator it = candidatesMap.entrySet().iterator();
+                        for (int i = 1; i < candidatesMap.size() / 2; i++) it.next();
+
+                        Map.Entry<Long, Mat> pair = (Map.Entry) it.next();
+                        winnerFrame = pair.getValue();
+                        winnerFrameScore = pair.getKey();
                         //winnerFrameScore = candidatesMap.lastEntry().getKey();
                         //winnerFrame = candidatesMap.lastEntry().getValue();
                         LOG.info("adding to queue");
