@@ -18,14 +18,14 @@ import static utils.Consts.*;
 /**
  * Created by crised on 4/13/15.
  */
-public class FrameConsumer implements Runnable {
+public class Consumer implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final LinkedBlockingQueue queue;
     private AmazonS3 s3client;
 
-    public FrameConsumer(LinkedBlockingQueue queue) {
+    public Consumer(LinkedBlockingQueue queue) {
         this.queue = queue;
         s3client = new AmazonS3Client(new ProfileCredentialsProvider());
     }
@@ -37,7 +37,7 @@ public class FrameConsumer implements Runnable {
             LOG.info("Consumer started");
             while (true) {
                 Item item = (Item) queue.take(); //blocking method
-                LOG.info("Uploading image: " + item.getFileName());
+                LOG.info("Uploading image: " + item.getFileName() + ", Score: " + item.getCapturePixelScore());
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(item.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,

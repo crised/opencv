@@ -17,21 +17,20 @@ import static utils.Consts.*;
 /**
  * Created by crised on 4/6/15.
  */
-public class FrameProducer implements Runnable {
+public class Producer implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final LinkedBlockingQueue queue;
-    private Mat frame, blur, mask;
+    private Mat frame, blur, mask, winnerFrame;
     private Core cvCore;
-    private long captureDelay, capturePixelScore, lastPassed;
+    private long timeSlot, capturePixelScore, winnerFrameScore, lastPassed;
     private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
-    private NavigableMap<Long, Mat> timeSlotMap;
+    private NavigableMap<Long, Mat> candidatesMap;
 
 
-    public FrameProducer(LinkedBlockingQueue queue) {
-
+    public Producer(LinkedBlockingQueue queue) {
         this.queue = queue;
         this.frame = new Mat();
         this.blur = new Mat();
@@ -39,14 +38,11 @@ public class FrameProducer implements Runnable {
         this.cvCore = new Core();
         this.bS = new BackgroundSubtractorMOG2();
         constructBackOff();
-        this.timeSlotMap = new TreeMap<>();
-
-
+        this.candidatesMap = new TreeMap<>();
     }
 
     @Override
     public void run() {
-
         try {
 
             LOG.info("Producer started");
@@ -54,12 +50,12 @@ public class FrameProducer implements Runnable {
             vCap.open(IP_STREAM_ADDRESS);
             // vCap.open(0); //usb camera
             if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
-            LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
-            LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+            //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
+            //LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
 
             //initial conditions
             this.lastPassed = System.currentTimeMillis();
-            calculateDelay();
+            this.timeSlot = 5000;
 
             while (true) {
 
@@ -73,46 +69,64 @@ public class FrameProducer implements Runnable {
                 bS.apply(blur, mask, -1);
                 capturePixelScore = cvCore.countNonZero(mask);
 
-                if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
-                    //Candidate frames
-                    LOG.info("adding candidate frames");
-                    this.timeSlotMap.put(capturePixelScore, frame);
+                if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) //add
+                    this.candidatesMap.put(capturePixelScore, frame);
 
-                    if (System.currentTimeMillis() - lastPassed > captureDelay) {
-                        //Need to pick winner frame  for the past slot
-                        MatOfByte jpg = new MatOfByte();
-                        Highgui.imencode(".jpg", timeSlotMap.lastEntry().getValue(), jpg);
-                        if (!queue.offer(new Item(jpg.toArray(), capturePixelScore)))
-                            LOG.error("Queue is full, lost frame!");
-                        calculateDelay();
-                        lastPassed = System.currentTimeMillis();
-                        this.timeSlotMap.clear();
-                        LOG.info("Score: " + String.valueOf(timeSlotMap.lastKey()) + ", Current Delay: " + captureDelay / 1000 + "s.");
+                if (System.currentTimeMillis() - lastPassed > timeSlot) {
+                    LOG.info("Current time slot done, interval: " + timeSlot / 1000);
+                    lastPassed = System.currentTimeMillis();
+
+                    if (candidatesMap.size() == 0) {
+                        //no need to do backoff
+                        getNextTimeSlot(false);
+                    } else {
+                        float mapSize = candidatesMap.size();
+                        int middle =  Math.round(mapSize/2);
+                        winnerFrameScore = candidatesMap.ge
+
+                        //winnerFrameScore = candidatesMap.lastEntry().getKey();
+                        //winnerFrame = candidatesMap.lastEntry().getValue();
+                        LOG.info("adding to queue");
+                        addQueueItem();
+                        this.candidatesMap.clear();
+                        getNextTimeSlot(true);
                     }
                 }
             }
-
         } catch (InterruptedException e) {
-            LOG.error("Thread Exception");
+            LOG.error("Thread Exception", e);
         } catch (Exception e) {
-            LOG.error("Other Exception");
+            LOG.error("Other Exception", e);
         }
 
     }
 
+    private void addQueueItem() throws Exception {
 
-    private void calculateDelay() throws Exception {
+        MatOfByte jpg = new MatOfByte();
+        Highgui.imencode(".jpg", winnerFrame, jpg);
+        if (!queue.offer(new Item(jpg.toArray(), winnerFrameScore)))
+            LOG.error("Queue is full, lost frame!");
+
+    }
+
+
+    private void getNextTimeSlot(boolean hasCaptured) throws Exception {
         //2 conditions to reset the timer.
         //1st Contition: Too much time has passed.
         if (backOff.getElapsedTimeMillis() >= TIME_BETWEEN_CAMERA_EVENTS) {
             LOG.info("Camera event has passed, resetting timer.");
             backOff.reset();
         }
-        this.captureDelay = backOff.getCurrentIntervalMillis();
-        if (backOff.nextBackOffMillis() == ExponentialBackOff.STOP) {
-            LOG.info("Max Interval has been reached, resetting.");
-            backOff.reset();
+        //by calling nextBackOffMillis, time slot is upgraded.
+        if (hasCaptured) { //only if it has captured upgrade time slot.
+            if (backOff.nextBackOffMillis() == ExponentialBackOff.STOP) {
+                LOG.info("Max Interval has been reached, resetting.");
+                backOff.reset();
+            }
         }
+
+        this.timeSlot = backOff.getCurrentIntervalMillis();
     }
 
     private void constructBackOff() {

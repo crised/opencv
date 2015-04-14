@@ -30,11 +30,10 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        LOG.info("Hi");
         //checkOpenCV();
-        new Thread(new FrameProducer(queue)).start();
-        new Thread(new FrameConsumer(queue)).start();
-        LOG.info("Main done");
+        new Thread(new Producer(queue)).start();
+        new Thread(new Consumer(queue)).start();
+        LOG.info("Producer and Consumer threads started.");
         //.run() blocks, producer.setDaemon(true);
         //program ends when all daemon threads end.
     }

@@ -15,7 +15,7 @@ public final class Consts {
     public static final int REFRESH_RATE_DELAY = 200;
     public static final int CAPTURE_PIXELS_THRESHOLD = 3_000;
     public static final int EXPONENTIAL_INIT_INTERVAL = 5_000;
-    public static final int EXPONENTIAL_MULTIPLIER = 4;
+    public static final double EXPONENTIAL_MULTIPLIER = 1.3;//should be int 4
     public static final int EXPONENTIAL_RANDOMIZATION = 0;
     public static final int EXPONENTIAL_MAX_ELAPSED_TIME = 600_000; //320 seconds is the maximum value (the next is 1280, then BackOff.Stop
     public static final int EXPONENTIAL_MAX_INTERVAL_MILLIS = 8_000_000; //8000 seconds an arbitrary maximum value,
