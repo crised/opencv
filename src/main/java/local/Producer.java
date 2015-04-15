@@ -65,8 +65,8 @@ public class Producer implements Runnable {
                     Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
-                //Imgproc.blur(frame, blur, new Size(8.0, 8.0));
-                bS.apply(frame, mask, -1);
+                Imgproc.blur(frame, blur, new Size(8.0, 8.0));
+                bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
                 capturePixelScore = cvCore.countNonZero(mask);
@@ -77,23 +77,32 @@ public class Producer implements Runnable {
                 Imgproc.drawContours(frame, contours, -1, new Scalar(0, 0, 255), 2);
                 //LOG.info("There are: " + String.valueOf(contours.size()) + " red regions.");
 
-                boolean defect = false;
-                List<String> convexityDefectsList = new ArrayList<>();
+                boolean area = false, ratioBoolean = false;
 
                 if (contours.size() <= 3 || contours.size() >= 30) continue; //No contour in the image.
 
 
                 for (MatOfPoint matOfPoint : contours) {
 
-                    if (matOfPoint.size().area() > 150) {
-                        LOG.info(String.valueOf(matOfPoint.size().area()));
-                        defect = true;
 
+                    MatOfInt hull = new MatOfInt();
+                    Imgproc.convexHull(matOfPoint, hull);
+
+                    double ratio = matOfPoint.size().area() / hull.size().area();
+                    //LOG.info("Ratio: " + ratio );
+
+
+                    if (matOfPoint.size().area() > 90 && ratio < 1.99) {
+                        LOG.info("area: " + String.valueOf(matOfPoint.size().area()) + ", ratio: " + ratio);
+                        ratioBoolean = true;
+                        area = true;
                     }
+
+                    //TODO: Image score.
 
                 }
 
-                if (defect) {
+                if (ratioBoolean && area) {
                     LOG.info("Contour Size:" + String.valueOf(contours.size()));
                     Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
                     Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
