@@ -80,33 +80,21 @@ public class Producer implements Runnable {
                 boolean defect = false;
                 List<String> convexityDefectsList = new ArrayList<>();
 
-                if (contours.size() > 3) {
-                    for (MatOfPoint contourPointSet : contours) {
-                        //LOG.info(contourPointSet.size().area());
-                        //LOG.info("Contour size: " + String.valueOf(contourPointSet.elemSize()));
-                        MatOfInt convexhull = new MatOfInt();
-                        Imgproc.convexHull(contourPointSet, convexhull);
-                        if (convexhull.toList().size() > 3) {
-                            //LOG.info("Hull size: " + String.valueOf(convexhull.elemSize()));
-                            MatOfInt4 convexityDefects = new MatOfInt4();
-                            Imgproc.convexityDefects(contourPointSet, convexhull, convexityDefects);
-                            if (convexityDefects.toList().size() > 3) {
-                                defect = true;
-                                if (convexityDefects.toList().get(3) <= 113)
-                                    LOG.info(convexityDefects.toList().get(3).toString());
-                            }
-                        } else {
-                            //LOG.warn("problem convexhull: " + convexhull.toList().size());
-                        }
+                if (contours.size() <= 3 || contours.size() >= 30) continue; //No contour in the image.
 
-                        //LOG.info(String.valueOf(convexhull.elemSize()));
-                        //MatOfInt4 convexityDefects = new MatOfInt4();
-                        // Imgproc.convexityDefects(contour, convexhull,  new MatOfInt4());
-                        //convexityDefectsList.add(convexityDefects);
+
+                for (MatOfPoint matOfPoint : contours) {
+
+                    if (matOfPoint.size().area() > 150) {
+                        LOG.info(String.valueOf(matOfPoint.size().area()));
+                        defect = true;
+
                     }
+
                 }
 
                 if (defect) {
+                    LOG.info("Contour Size:" + String.valueOf(contours.size()));
                     Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
                     Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
                 }
