@@ -65,12 +65,58 @@ public class Producer implements Runnable {
                     Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
-                Imgproc.blur(frame, blur, new Size(8.0, 8.0));
-                bS.apply(blur, mask, -1);
+                //Imgproc.blur(frame, blur, new Size(8.0, 8.0));
+                bS.apply(frame, mask, -1);
+                Imgproc.erode(mask, mask, new Mat());
+                Imgproc.dilate(mask, mask, new Mat());
                 capturePixelScore = cvCore.countNonZero(mask);
-                LOG.info(String.valueOf(capturePixelScore));
-                Highgui.imwrite("img/" + String.valueOf(System.currentTimeMillis()) + ".jpg", blur);
-                Highgui.imwrite("img/" + String.valueOf(System.currentTimeMillis()) + "-m.jpg", mask);
+                // LOG.info(String.valueOf(capturePixelScore));
+                List<MatOfPoint> contours = new ArrayList<>();
+                Mat hierarchy = new Mat();
+                Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
+                Imgproc.drawContours(frame, contours, -1, new Scalar(0, 0, 255), 2);
+                //LOG.info("There are: " + String.valueOf(contours.size()) + " red regions.");
+
+                boolean defect = false;
+                List<String> convexityDefectsList = new ArrayList<>();
+
+                if (contours.size() > 3) {
+                    for (MatOfPoint contourPointSet : contours) {
+                        //LOG.info(contourPointSet.size().area());
+                        //LOG.info("Contour size: " + String.valueOf(contourPointSet.elemSize()));
+                        MatOfInt convexhull = new MatOfInt();
+                        Imgproc.convexHull(contourPointSet, convexhull);
+                        if (convexhull.toList().size() > 3) {
+                            //LOG.info("Hull size: " + String.valueOf(convexhull.elemSize()));
+                            MatOfInt4 convexityDefects = new MatOfInt4();
+                            Imgproc.convexityDefects(contourPointSet, convexhull, convexityDefects);
+                            if (convexityDefects.toList().size() > 3) {
+                                defect = true;
+                                if (convexityDefects.toList().get(3) <= 113)
+                                    LOG.info(convexityDefects.toList().get(3).toString());
+                            }
+                        } else {
+                            //LOG.warn("problem convexhull: " + convexhull.toList().size());
+                        }
+
+                        //LOG.info(String.valueOf(convexhull.elemSize()));
+                        //MatOfInt4 convexityDefects = new MatOfInt4();
+                        // Imgproc.convexityDefects(contour, convexhull,  new MatOfInt4());
+                        //convexityDefectsList.add(convexityDefects);
+                    }
+                }
+
+                if (defect) {
+                    Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
+                    Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
+                }
+                //LOG.info("next image");
+
+
+                //if (capturePixelScore > 1000) {
+
+                //}
+
 
                 /*
                if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
