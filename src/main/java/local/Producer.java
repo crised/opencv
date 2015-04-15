@@ -55,7 +55,7 @@ public class Producer implements Runnable {
 
             //initial conditions
             this.lastPassed = System.currentTimeMillis();
-            this.timeSlot = 5000;
+            getNextTimeSlot(false);
 
             while (true) {
 
@@ -65,12 +65,18 @@ public class Producer implements Runnable {
                     Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
-                Imgproc.blur(frame, blur, new Size(3.0, 3.0));
+                Imgproc.blur(frame, blur, new Size(8.0, 8.0));
                 bS.apply(blur, mask, -1);
                 capturePixelScore = cvCore.countNonZero(mask);
+                LOG.info(String.valueOf(capturePixelScore));
+                Highgui.imwrite("img/" + String.valueOf(System.currentTimeMillis()) + ".jpg", blur);
+                Highgui.imwrite("img/" + String.valueOf(System.currentTimeMillis()) + "-m.jpg", mask);
 
-                if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) //add
+                /*
+               if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
                     this.candidatesMap.put(capturePixelScore, frame);
+                }
+
 
                 if (System.currentTimeMillis() - lastPassed > timeSlot) {
                     LOG.info("Current time slot done, interval: " + timeSlot / 1000);
@@ -94,7 +100,7 @@ public class Producer implements Runnable {
                         this.candidatesMap.clear();
                         getNextTimeSlot(true);
                     }
-                }
+                }*/
             }
         } catch (InterruptedException e) {
             LOG.error("Thread Exception", e);
