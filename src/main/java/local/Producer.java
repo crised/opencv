@@ -38,6 +38,11 @@ public class Producer implements Runnable {
     private NavigableMap<Long, Mat> candidatesMap;
     private HOGDescriptor Hog;
 
+    /*
+    pMOG2_g.history = 3000; //300;
+	pMOG2_g.varThreshold =128; //64; //128; //64; //32;//;
+	pMOG2_g.bShadowDetection = false; // true;//
+     */
 
     public Producer(LinkedBlockingQueue queue) {
         this.queue = queue;
@@ -47,7 +52,7 @@ public class Producer implements Runnable {
         this.cvCore = new Core();
         this.lastMask = new Mat();
         this.abbsDiff = new Mat();
-        this.bS = new BackgroundSubtractorMOG2();
+        this.bS = new BackgroundSubtractorMOG2(300, 128, true);
         constructBackOff();
         this.candidatesMap = new TreeMap<>();
         this.Hog = new HOGDescriptor();
@@ -73,7 +78,7 @@ public class Producer implements Runnable {
 
             while (true) {
 
-                Thread.sleep(REFRESH_RATE_DELAY);
+                //Thread.sleep(REFRESH_RATE_DELAY);
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     Thread.sleep(IP_RETRY_INTERVAL);
@@ -84,18 +89,30 @@ public class Producer implements Runnable {
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
 
+                if(cvCore.countNonZero(mask) > 0.2 * 640 * 480) {
+                    LOG.warn("Discard frame");
+                    continue;
+                }
+
                 //  Hog.compute(mask, descriptors);
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
                 Hog.detectMultiScale(mask, foundLocations, foundWeights);
 
 
-                if (foundWeights.toList().size() > 0) {
+                if (foundLocations.toList().size() > 0) {
                     LOG.info("Locations " + String.valueOf(foundLocations.toList().size()));
-                    LOG.info("Weights " + String.valueOf(foundWeights.toList().size()));
-                    Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
-                    Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
+                    Highgui.imwrite("img/" + "PED" + System.currentTimeMillis() + ".jpg", frame);
+                    Highgui.imwrite("img/" + "PED" + System.currentTimeMillis() + "-m.jpg", mask);
                 }
+                if (foundWeights.toList().size() > 0){
+                    LOG.info("Weights " + String.valueOf(foundWeights.toList().size()));
+                    continue;
+                }
+
+                Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
+                Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
+                // }
 
 
             }
