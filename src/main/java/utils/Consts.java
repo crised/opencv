@@ -10,7 +10,7 @@ public final class Consts {
 
     public static final String CL_TELEMATIC = "cl.telematic";
 
-    public static final String IP_STREAM_ADDRESS = "http://192.168.1.47/videostream.cgi?user=admin&pwd=admin";
+    public static final String IP_STREAM_ADDRESS = "http://192.168.1.62/videostream.cgi?user=admin&pwd=admin";
     public static final int IP_RETRY_INTERVAL = 5_000;
     public static final int REFRESH_RATE_DELAY = 100;
     public static final int CAPTURE_PIXELS_THRESHOLD = 2_000;

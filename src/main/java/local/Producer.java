@@ -1,14 +1,22 @@
 package local;
 
+import com.google.api.client.http.HttpIOExceptionHandler;
 import com.google.api.client.util.ExponentialBackOff;
+import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import org.opencv.core.*;
+import org.opencv.features2d.DMatch;
+import org.opencv.features2d.DescriptorExtractor;
+import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.KeyPoint;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.HOGDescriptor;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+import javax.print.attribute.HashPrintJobAttributeSet;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -22,12 +30,13 @@ public class Producer implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final LinkedBlockingQueue queue;
-    private Mat frame, blur, mask, winnerFrame;
+    private Mat frame, blur, mask, winnerFrame, lastMask, abbsDiff;
     private Core cvCore;
     private long timeSlot, capturePixelScore, winnerFrameScore, lastPassed;
     private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
     private NavigableMap<Long, Mat> candidatesMap;
+    private HOGDescriptor Hog;
 
 
     public Producer(LinkedBlockingQueue queue) {
@@ -36,9 +45,14 @@ public class Producer implements Runnable {
         this.blur = new Mat();
         this.mask = new Mat();
         this.cvCore = new Core();
+        this.lastMask = new Mat();
+        this.abbsDiff = new Mat();
         this.bS = new BackgroundSubtractorMOG2();
         constructBackOff();
         this.candidatesMap = new TreeMap<>();
+        this.Hog = new HOGDescriptor();
+        this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
+
     }
 
     @Override
@@ -69,81 +83,21 @@ public class Producer implements Runnable {
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
-                capturePixelScore = cvCore.countNonZero(mask);
-                // LOG.info(String.valueOf(capturePixelScore));
-                List<MatOfPoint> contours = new ArrayList<>();
-                Mat hierarchy = new Mat();
-                Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
-                Imgproc.drawContours(frame, contours, -1, new Scalar(0, 0, 255), 2);
-                //LOG.info("There are: " + String.valueOf(contours.size()) + " red regions.");
 
-                boolean area = false, ratioBoolean = false;
-
-                if (contours.size() <= 3 || contours.size() >= 30) continue; //No contour in the image.
+                //  Hog.compute(mask, descriptors);
+                MatOfRect foundLocations = new MatOfRect();
+                MatOfDouble foundWeights = new MatOfDouble();
+                Hog.detectMultiScale(mask, foundLocations, foundWeights);
 
 
-                for (MatOfPoint matOfPoint : contours) {
-
-
-                    MatOfInt hull = new MatOfInt();
-                    Imgproc.convexHull(matOfPoint, hull);
-
-                    double ratio = matOfPoint.size().area() / hull.size().area();
-                    //LOG.info("Ratio: " + ratio );
-
-
-                    if (matOfPoint.size().area() > 90 && ratio < 1.99) {
-                        LOG.info("area: " + String.valueOf(matOfPoint.size().area()) + ", ratio: " + ratio);
-                        ratioBoolean = true;
-                        area = true;
-                    }
-
-                    //TODO: Image score.
-
-                }
-
-                if (ratioBoolean && area) {
-                    LOG.info("Contour Size:" + String.valueOf(contours.size()));
+                if (foundWeights.toList().size() > 0) {
+                    LOG.info("Locations " + String.valueOf(foundLocations.toList().size()));
+                    LOG.info("Weights " + String.valueOf(foundWeights.toList().size()));
                     Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
                     Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
                 }
-                //LOG.info("next image");
 
 
-                //if (capturePixelScore > 1000) {
-
-                //}
-
-
-                /*
-               if (capturePixelScore > CAPTURE_PIXELS_THRESHOLD) {
-                    this.candidatesMap.put(capturePixelScore, frame);
-                }
-
-
-                if (System.currentTimeMillis() - lastPassed > timeSlot) {
-                    LOG.info("Current time slot done, interval: " + timeSlot / 1000);
-                    lastPassed = System.currentTimeMillis();
-
-                    if (candidatesMap.size() == 0) {
-                        //no need to do backoff
-                        getNextTimeSlot(false);
-                    } else {
-
-                        Iterator it = candidatesMap.entrySet().iterator();
-                        for (int i = 1; i < candidatesMap.size() / 2; i++) it.next();
-
-                        Map.Entry<Long, Mat> pair = (Map.Entry) it.next();
-                        winnerFrame = pair.getValue();
-                        winnerFrameScore = pair.getKey();
-                        //winnerFrameScore = candidatesMap.lastEntry().getKey();
-                        //winnerFrame = candidatesMap.lastEntry().getValue();
-                        LOG.info("adding to queue");
-                        addQueueItem();
-                        this.candidatesMap.clear();
-                        getNextTimeSlot(true);
-                    }
-                }*/
             }
         } catch (InterruptedException e) {
             LOG.error("Thread Exception", e);
