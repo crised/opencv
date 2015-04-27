@@ -57,7 +57,7 @@ public class Vehicle implements Runnable {
                         && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
                 //LOG.info("passed if");
                 MatOfRect foundLocations = new MatOfRect();
-                cascade.detectMultiScale(mask, foundLocations);
+                cascade.detectMultiScale(frame, foundLocations);
                 if (foundLocations.toList().size() > 0) { //could be size directly
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();

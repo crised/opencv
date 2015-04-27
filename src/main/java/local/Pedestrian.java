@@ -50,10 +50,12 @@ public class Pedestrian implements Runnable {
                 this.mask = frames.get(1);
                 if (!(cvCore.countNonZero(mask) > LOWER_BOUND_PIXELS_PEDESTRIANS
                         && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
-                writeToDisk();
+                //writeToDisk();
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
-                Hog.detectMultiScale(mask, foundLocations, foundWeights);
+                //Mat grayscale = new Mat();
+                //frame.convertTo(grayscale, CvType.CV_8U);
+                Hog.detectMultiScale(frame, foundLocations, foundWeights);
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
