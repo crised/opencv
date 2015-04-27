@@ -36,13 +36,13 @@ public class Consumer implements Runnable {
         try {
             LOG.info("Consumer started");
             while (true) {
-                Item item = (Item) queue.take(); //blocking method
-                LOG.info("Uploading image: " + item.getFileName() + ", Score: " + item.getCapturePixelScore());
+                ItemS3 itemS3 = (ItemS3) queue.take(); //blocking method
+                LOG.info("Uploading image: " + itemS3.getFileName());
                 ObjectMetadata objectMetadata = new ObjectMetadata();
-                objectMetadata.setContentLength(item.getData().length);
+                objectMetadata.setContentLength(itemS3.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,
-                        item.getFileName(),
-                        new ByteArrayInputStream(item.getData()),
+                        itemS3.getFileName(),
+                        new ByteArrayInputStream(itemS3.getData()),
                         objectMetadata));
                 //Consider saving the image in case of network error.
             }

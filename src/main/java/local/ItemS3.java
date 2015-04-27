@@ -7,17 +7,15 @@ import java.text.SimpleDateFormat;
 /**
  * Created by crised on 4/13/15.
  */
-public class Item {
+public class ItemS3 {
 
     private long timeStamp;
     private byte[] data;
-    private long capturePixelScore;
     private String fileName;
 
-    public Item(byte[] data, long capturePixelScore) {
+    public ItemS3(byte[] data) {
         this.timeStamp = System.currentTimeMillis();
         this.data = data;
-        this.capturePixelScore = capturePixelScore;
         Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_SX");
         this.fileName = formatter.format(timeStamp) + ".jpg";
 
@@ -31,9 +29,6 @@ public class Item {
         return data;
     }
 
-    public long getCapturePixelScore() {
-        return capturePixelScore;
-    }
 
     public String getFileName() {
         return fileName;

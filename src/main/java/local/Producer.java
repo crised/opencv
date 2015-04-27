@@ -1,23 +1,16 @@
 package local;
 
-import com.google.api.client.http.HttpIOExceptionHandler;
 import com.google.api.client.util.ExponentialBackOff;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import org.opencv.core.*;
-import org.opencv.features2d.DMatch;
-import org.opencv.features2d.DescriptorExtractor;
-import org.opencv.features2d.FeatureDetector;
-import org.opencv.features2d.KeyPoint;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.objdetect.HOGDescriptor;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-import javax.print.attribute.HashPrintJobAttributeSet;
-import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static utils.Consts.*;
@@ -30,13 +23,13 @@ public class Producer implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final LinkedBlockingQueue queue;
-    private Mat frame, blur, mask, winnerFrame, lastMask, abbsDiff;
+    private Mat frame, blur, mask;
     private Core cvCore;
-    private long timeSlot, capturePixelScore, winnerFrameScore, lastPassed;
+    private long initTime;
     private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
-    private NavigableMap<Long, Mat> candidatesMap;
     private HOGDescriptor Hog;
+    private CascadeClassifier cascade;
 
     /*
     pMOG2_g.history = 3000; //300;
@@ -50,13 +43,10 @@ public class Producer implements Runnable {
         this.blur = new Mat();
         this.mask = new Mat();
         this.cvCore = new Core();
-        this.lastMask = new Mat();
-        this.abbsDiff = new Mat();
         this.bS = new BackgroundSubtractorMOG2(300, 128, true);
-        constructBackOff();
-        this.candidatesMap = new TreeMap<>();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
+        this.cascade = new CascadeClassifier("/home/crised/IdeaProjects/opencv/src/main/resources/cars3.xml");
 
     }
 
@@ -67,54 +57,56 @@ public class Producer implements Runnable {
             LOG.info("Producer started");
             org.opencv.highgui.VideoCapture vCap = new org.opencv.highgui.VideoCapture();
             vCap.open(IP_STREAM_ADDRESS);
-            // vCap.open(0); //usb camera
             if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
-            //LOG.info("Frame Height " + vCap.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
-
-            //initial conditions
-            this.lastPassed = System.currentTimeMillis();
-            getNextTimeSlot(false);
 
             while (true) {
 
+                initTime = System.currentTimeMillis();
                 //Thread.sleep(REFRESH_RATE_DELAY);
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
+                //Background Substractor, could be done in different thread.
                 Imgproc.blur(frame, blur, new Size(8.0, 8.0));
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
 
-                if(cvCore.countNonZero(mask) > 0.2 * 640 * 480) {
-                    LOG.warn("Discard frame");
+                if (cvCore.countNonZero(mask) > 0.11 * 640 * 480) {
+                    LOG.warn("Discard frame, too much info");
                     continue;
                 }
 
-                //  Hog.compute(mask, descriptors);
-                MatOfRect foundLocations = new MatOfRect();
+                if (cvCore.countNonZero(mask) < 0.001 * 640 * 480)
+                    continue;
+
+
+                //Pedestrian detection.
+                MatOfRect foundLocationsPed = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
-                Hog.detectMultiScale(mask, foundLocations, foundWeights);
+                Hog.detectMultiScale(mask, foundLocationsPed, foundWeights);
 
 
-                if (foundLocations.toList().size() > 0) {
-                    LOG.info("Locations " + String.valueOf(foundLocations.toList().size()));
-                    Highgui.imwrite("img/" + "PED" + System.currentTimeMillis() + ".jpg", frame);
-                    Highgui.imwrite("img/" + "PED" + System.currentTimeMillis() + "-m.jpg", mask);
-                }
-                if (foundWeights.toList().size() > 0){
-                    LOG.info("Weights " + String.valueOf(foundWeights.toList().size()));
+                if (foundLocationsPed.toList().size() > 0 || foundLocationsPed.toList().size() > 0) {
+                    LOG.info("Pedestiran Locations " + String.valueOf(foundLocationsPed.toList().size()));
+                    writeToDisk("PED");
+                    queueItem();
                     continue;
                 }
 
-                Highgui.imwrite("img/" + System.currentTimeMillis() + ".jpg", frame);
-                Highgui.imwrite("img/" + System.currentTimeMillis() + "-m.jpg", mask);
-                // }
 
-
+                //Vehicle detection
+                MatOfRect foundLocationsVeh = new MatOfRect();
+                cascade.detectMultiScale(mask, foundLocationsVeh);
+                if (foundLocationsVeh.toList().size() > 0) {
+                    LOG.info("Vehicle Locations " + String.valueOf(foundLocationsVeh.toList().size()));
+                    writeToDisk("VEH");
+                    queueItem();
+                }
+                LOG.info("Iteration time: " + String.valueOf(System.currentTimeMillis() - initTime));
             }
         } catch (InterruptedException e) {
             LOG.error("Thread Exception", e);
@@ -124,42 +116,20 @@ public class Producer implements Runnable {
 
     }
 
-    private void addQueueItem() throws Exception {
+    private void queueItem() throws Exception {
 
         MatOfByte jpg = new MatOfByte();
-        Highgui.imencode(".jpg", winnerFrame, jpg);
-        if (!queue.offer(new Item(jpg.toArray(), winnerFrameScore)))
+        Highgui.imencode(".jpg", frame, jpg);
+        if (!queue.offer(new ItemS3(jpg.toArray())))
             LOG.error("Queue is full, lost frame!");
 
     }
 
+    private void writeToDisk(String prepend) throws Exception{
 
-    private void getNextTimeSlot(boolean hasCaptured) throws Exception {
-        //2 conditions to reset the timer.
-        //1st Contition: Too much time has passed.
-        if (backOff.getElapsedTimeMillis() >= TIME_BETWEEN_CAMERA_EVENTS) {
-            LOG.info("Camera event has passed, resetting timer.");
-            backOff.reset();
-        }
-        //by calling nextBackOffMillis, time slot is upgraded.
-        if (hasCaptured) { //only if it has captured upgrade time slot.
-            if (backOff.nextBackOffMillis() == ExponentialBackOff.STOP) {
-                LOG.info("Max Interval has been reached, resetting.");
-                backOff.reset();
-            }
-        }
+        Highgui.imwrite("img/" + prepend + System.currentTimeMillis() + ".jpg", frame);
+        Highgui.imwrite("img/" + prepend + System.currentTimeMillis() + "-m.jpg", frame);
 
-        this.timeSlot = backOff.getCurrentIntervalMillis();
-    }
-
-    private void constructBackOff() {
-        ExponentialBackOff.Builder builder = new ExponentialBackOff.Builder();
-        builder.setInitialIntervalMillis(EXPONENTIAL_INIT_INTERVAL);
-        builder.setMultiplier(EXPONENTIAL_MULTIPLIER);
-        builder.setRandomizationFactor(EXPONENTIAL_RANDOMIZATION);
-        builder.setMaxElapsedTimeMillis(EXPONENTIAL_MAX_ELAPSED_TIME);
-        builder.setMaxIntervalMillis(EXPONENTIAL_MAX_INTERVAL_MILLIS);
-        this.backOff = builder.build();
     }
 
 
