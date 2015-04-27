@@ -26,16 +26,11 @@ public class Producer implements Runnable {
     private Mat frame, blur, mask;
     private Core cvCore;
     private long initTime;
-    private ExponentialBackOff backOff;
     private BackgroundSubtractorMOG2 bS;
     private HOGDescriptor Hog;
     private CascadeClassifier cascade;
-
-    /*
-    pMOG2_g.history = 3000; //300;
-	pMOG2_g.varThreshold =128; //64; //128; //64; //32;//;
-	pMOG2_g.bShadowDetection = false; // true;//
-     */
+    private MatOfRect foundLocationsPed, foundLocationsVeh;
+    private MatOfDouble foundWeights;
 
     public Producer(LinkedBlockingQueue queue) {
         this.queue = queue;
@@ -43,6 +38,9 @@ public class Producer implements Runnable {
         this.blur = new Mat();
         this.mask = new Mat();
         this.cvCore = new Core();
+        this.foundLocationsPed = new MatOfRect();
+        this.foundLocationsVeh = new MatOfRect();
+        this.foundWeights = new MatOfDouble();
         this.bS = new BackgroundSubtractorMOG2(300, 128, true);
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
@@ -69,14 +67,14 @@ public class Producer implements Runnable {
                     Thread.sleep(IP_RETRY_INTERVAL);
                 }
 
-                //Background Substractor, could be done in different thread.
+                //Background Substractor, could be done in different thread. ExecutorService
                 Imgproc.blur(frame, blur, new Size(8.0, 8.0));
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
 
                 if (cvCore.countNonZero(mask) > 0.11 * 640 * 480) {
-                    LOG.warn("Discard frame, too much info");
+                    LOG.warn("Discard frame, too much white");
                     continue;
                 }
 
@@ -85,11 +83,7 @@ public class Producer implements Runnable {
 
 
                 //Pedestrian detection.
-                MatOfRect foundLocationsPed = new MatOfRect();
-                MatOfDouble foundWeights = new MatOfDouble();
                 Hog.detectMultiScale(mask, foundLocationsPed, foundWeights);
-
-
                 if (foundLocationsPed.toList().size() > 0 || foundLocationsPed.toList().size() > 0) {
                     LOG.info("Pedestiran Locations " + String.valueOf(foundLocationsPed.toList().size()));
                     writeToDisk("PED");
@@ -97,15 +91,14 @@ public class Producer implements Runnable {
                     continue;
                 }
 
-
                 //Vehicle detection
-                MatOfRect foundLocationsVeh = new MatOfRect();
                 cascade.detectMultiScale(mask, foundLocationsVeh);
                 if (foundLocationsVeh.toList().size() > 0) {
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocationsVeh.toList().size()));
                     writeToDisk("VEH");
                     queueItem();
                 }
+                //1 second could be too much
                 LOG.info("Iteration time: " + String.valueOf(System.currentTimeMillis() - initTime));
             }
         } catch (InterruptedException e) {
@@ -125,12 +118,10 @@ public class Producer implements Runnable {
 
     }
 
-    private void writeToDisk(String prepend) throws Exception{
+    private void writeToDisk(String prepend) throws Exception {
 
         Highgui.imwrite("img/" + prepend + System.currentTimeMillis() + ".jpg", frame);
         Highgui.imwrite("img/" + prepend + System.currentTimeMillis() + "-m.jpg", frame);
 
     }
-
-
 }

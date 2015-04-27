@@ -33,7 +33,6 @@ public class Main {
         //checkOpenCV();
         new Thread(new Producer(queue)).start();
         new Thread(new Consumer(queue)).start();
-        LOG.info("Producer and Consumer threads started.");
         //.run() blocks, producer.setDaemon(true);
         //program ends when all daemon threads end.
     }
