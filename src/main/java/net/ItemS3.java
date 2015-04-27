@@ -1,4 +1,4 @@
-package local;
+package net;
 
 
 import java.text.Format;
@@ -13,11 +13,11 @@ public class ItemS3 {
     private byte[] data;
     private String fileName;
 
-    public ItemS3(byte[] data) {
+    public ItemS3(byte[] data, String kind) {
         this.timeStamp = System.currentTimeMillis();
         this.data = data;
         Format formatter = new SimpleDateFormat("HH:mm:ss_dd-MM-yyyy_SX");
-        this.fileName = formatter.format(timeStamp) + ".jpg";
+        this.fileName = formatter.format(timeStamp) + kind + ".jpg";
 
     }
 

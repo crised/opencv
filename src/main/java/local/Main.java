@@ -1,5 +1,6 @@
 package local;
 
+import net.Consumer;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -29,12 +30,12 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-
         //checkOpenCV();
-        new Thread(new Producer(queue)).start();
+        final Feeder feeder = new Feeder();
+        new Thread(feeder).start();
+        new Thread(new Pedestrian(feeder, queue)).start();
+        new Thread(new Vehicle(feeder, queue)).start();
         new Thread(new Consumer(queue)).start();
-        //.run() blocks, producer.setDaemon(true);
-        //program ends when all daemon threads end.
     }
 
 

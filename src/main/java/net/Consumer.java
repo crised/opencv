@@ -1,4 +1,4 @@
-package local;
+package net;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
