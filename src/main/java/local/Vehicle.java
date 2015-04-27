@@ -1,5 +1,6 @@
 package local;
 
+import net.Consumer;
 import net.ItemS3;
 import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
@@ -26,12 +27,14 @@ public class Vehicle implements Runnable {
     private Mat frame, mask;
     private HOGDescriptor Hog;
     private List<Mat> frames;
+    private Consumer consumer;
 
     private CascadeClassifier cascade;
 
-    public Vehicle(Feeder feeder, LinkedBlockingQueue queue) {
+    public Vehicle(Feeder feeder, LinkedBlockingQueue queue, Consumer consumer) {
         this.feeder = feeder;
         this.queue = queue;
+        this.consumer = consumer;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
@@ -57,13 +60,11 @@ public class Vehicle implements Runnable {
                         && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
                 //LOG.info("passed if");
                 MatOfRect foundLocations = new MatOfRect();
-                cascade.detectMultiScale(frame, foundLocations);
+                cascade.detectMultiScale(mask, foundLocations); //cannot feed frame, because vehicle could be parked
                 if (foundLocations.toList().size() > 0) { //could be size directly
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
                     queueItem();
-                    LOG.info("sleeping");
-                    Thread.sleep(TIME_BETWEEN_FRAME_EVENTS);
                 }
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
@@ -74,6 +75,12 @@ public class Vehicle implements Runnable {
     }
 
     private void queueItem() throws Exception {
+
+        if(System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000){
+            LOG.info("did not queue!");
+            return;
+        }
+
         MatOfByte jpg = new MatOfByte();
         Highgui.imencode(".jpg", frame, jpg);
         if (!queue.offer(new ItemS3(jpg.toArray(), "v")))

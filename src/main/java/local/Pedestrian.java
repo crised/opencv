@@ -1,5 +1,6 @@
 package local;
 
+import net.Consumer;
 import net.ItemS3;
 import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
@@ -24,11 +25,13 @@ public class Pedestrian implements Runnable {
     private Core cvCore;
     private Mat frame, mask;
     private HOGDescriptor Hog;
-      private List<Mat> frames;
+    private List<Mat> frames;
+    private Consumer consumer;
 
-    public Pedestrian(Feeder feeder, LinkedBlockingQueue queue) {
+    public Pedestrian(Feeder feeder, LinkedBlockingQueue queue, Consumer consumer) {
         this.feeder = feeder;
         this.queue = queue;
+        this.consumer = consumer;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
@@ -55,13 +58,11 @@ public class Pedestrian implements Runnable {
                 MatOfDouble foundWeights = new MatOfDouble();
                 //Mat grayscale = new Mat();
                 //frame.convertTo(grayscale, CvType.CV_8U);
-                Hog.detectMultiScale(frame, foundLocations, foundWeights);
+                Hog.detectMultiScale(mask, foundLocations, foundWeights);
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
                     queueItem();
-                    LOG.info("sleeping");
-                    Thread.sleep(TIME_BETWEEN_FRAME_EVENTS);
                 }
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
@@ -73,6 +74,11 @@ public class Pedestrian implements Runnable {
 
 
     private void queueItem() throws Exception {
+
+        if(System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000){
+            LOG.info("did not queue!");
+            return;
+        }
 
         MatOfByte jpg = new MatOfByte();
         Highgui.imencode(".jpg", frame, jpg);

@@ -24,6 +24,7 @@ public class Consumer implements Runnable {
 
     private final LinkedBlockingQueue queue;
     private AmazonS3 s3client;
+    private long lastUploadedTime;
 
     public Consumer(LinkedBlockingQueue queue) {
         this.queue = queue;
@@ -38,6 +39,7 @@ public class Consumer implements Runnable {
             while (true) {
                 ItemS3 itemS3 = (ItemS3) queue.take(); //blocking method
                 LOG.info("Uploading image: " + itemS3.getFileName());
+                lastUploadedTime = System.currentTimeMillis();
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(itemS3.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,
@@ -71,5 +73,8 @@ public class Consumer implements Runnable {
         }
     }
 
+    public long getLastUploadedTime() {
+        return lastUploadedTime;
+    }
 }
 

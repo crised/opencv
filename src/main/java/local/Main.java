@@ -32,10 +32,11 @@ public class Main {
     public static void main(String[] args) throws Exception {
         //checkOpenCV();
         final Feeder feeder = new Feeder();
+        final Consumer consumer = new Consumer(queue);
         new Thread(feeder).start();
-        new Thread(new Pedestrian(feeder, queue)).start();
-        new Thread(new Vehicle(feeder, queue)).start();
-        new Thread(new Consumer(queue)).start();
+        new Thread(consumer).start();
+        new Thread(new Pedestrian(feeder, queue, consumer)).start();
+        new Thread(new Vehicle(feeder, queue, consumer)).start();
     }
 
 

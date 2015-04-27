@@ -28,7 +28,8 @@ public class Feeder implements Runnable {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
-        this.bS = new BackgroundSubtractorMOG2(300, 128, true);
+       // this.bS = new BackgroundSubtractorMOG2(300, 128, true);
+        this.bS = new BackgroundSubtractorMOG2();
     }
 
     @Override
@@ -39,7 +40,7 @@ public class Feeder implements Runnable {
             Thread.sleep(IP_RETRY_INTERVAL);
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
-               // Thread.sleep(400); // 0 delay too fast in x220
+               // Thread.sleep(100); // 0 delay too fast in x220
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     setVideoCapture();
