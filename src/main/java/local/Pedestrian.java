@@ -4,10 +4,12 @@ import net.Consumer;
 import net.ItemS3;
 import org.opencv.core.*;
 import org.opencv.highgui.Highgui;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.HOGDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -53,7 +55,12 @@ public class Pedestrian implements Runnable {
                 writeToDisk();
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
-                Hog.detectMultiScale(iMats.getFrame(), foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
+                Mat convertedFrame = new Mat();
+                Imgproc.cvtColor(iMats.getFrame(), convertedFrame, Imgproc.COLOR_BGR2GRAY);
+                Highgui.imwrite("img/" + "GRAY" + cvCore.countNonZero(iMats.getMask()) + ".jpg", convertedFrame);
+                Imgproc.equalizeHist(convertedFrame, convertedFrame);
+                Highgui.imwrite("img/" + "EQUA" + cvCore.countNonZero(iMats.getMask()) + ".jpg", convertedFrame);
+                Hog.detectMultiScale(convertedFrame, foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
