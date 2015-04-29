@@ -18,7 +18,7 @@ public final class Consts {
     public static final double UPPER_BOUND_PIXELS_PEDESTRIANS = 3_007; // 640 x 480 x 0.01
     public static final double LOWER_BOUND_PIXELS_VEHICLES = 1536; // 640 x 480 x 0.005
     public static final double UPPER_BOUND_PIXELS_VEHICLES = 33_800; // 640 x 480 x 0.11
-    public static final String BUCKET_NAME = "telematic.cam";
+    public static final String BUCKET_NAME = "telematic.cama";
 
 
 }

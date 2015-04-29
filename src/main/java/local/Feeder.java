@@ -21,14 +21,14 @@ public class Feeder implements Runnable {
 
     private Mat frame, mask, blur; //Feeder frameReady
     private BackgroundSubtractorMOG2 bS;
-    private List<Mat> frames;
+    private IMats iMats;
     private org.opencv.highgui.VideoCapture vCap;
 
     public Feeder() {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
-       // this.bS = new BackgroundSubtractorMOG2(300, 128, true);
+        // this.bS = new BackgroundSubtractorMOG2(300, 128, true);
         this.bS = new BackgroundSubtractorMOG2();
     }
 
@@ -40,7 +40,7 @@ public class Feeder implements Runnable {
             Thread.sleep(IP_RETRY_INTERVAL);
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
-               // Thread.sleep(100); // 0 delay too fast in x220
+                //Thread.sleep(100); // 0 delay too fast in x220
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     setVideoCapture();
@@ -51,11 +51,7 @@ public class Feeder implements Runnable {
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
-                List<Mat> tempList = new ArrayList<>();
-                tempList.add(frame.clone());
-                tempList.add(mask.clone());
-               // LOG.info("refreshingList");
-                frames = tempList;
+                iMats = new IMats(frame, mask);
 
             }
         } catch (InterruptedException e) {
@@ -72,7 +68,7 @@ public class Feeder implements Runnable {
         if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
     }
 
-    public List<Mat> getFrames() {
-        return frames;
+    public IMats getiMats() {
+        return iMats;
     }
 }

@@ -23,10 +23,9 @@ public class Pedestrian implements Runnable {
     private final Feeder feeder;
     private final LinkedBlockingQueue queue;
     private Core cvCore;
-    private Mat frame, mask;
     private HOGDescriptor Hog;
-    private List<Mat> frames;
     private Consumer consumer;
+    private IMats iMats;
 
     public Pedestrian(Feeder feeder, LinkedBlockingQueue queue, Consumer consumer) {
         this.feeder = feeder;
@@ -43,22 +42,21 @@ public class Pedestrian implements Runnable {
         while (true) {
             try {
                 Thread.sleep(50);
-                frames = feeder.getFrames();
-                if (frames == null) {
+                iMats = feeder.getiMats();
+                if (iMats == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
                 }
-                this.frame = frames.get(0);
-                this.mask = frames.get(1);
-                if (!(cvCore.countNonZero(mask) > LOWER_BOUND_PIXELS_PEDESTRIANS
-                        && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
+
+                if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_PEDESTRIANS
+                        && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
                 //writeToDisk();
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
                 //Mat grayscale = new Mat();
                 //frame.convertTo(grayscale, CvType.CV_8U);
-                Hog.detectMultiScale(mask, foundLocations, foundWeights);
+                Hog.detectMultiScale(iMats.getMask(), foundLocations, foundWeights);
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
@@ -75,20 +73,20 @@ public class Pedestrian implements Runnable {
 
     private void queueItem() throws Exception {
 
-        if(System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000){
+        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000) {
             LOG.info("did not queue!");
             return;
         }
 
         MatOfByte jpg = new MatOfByte();
-        Highgui.imencode(".jpg", frame, jpg);
+        Highgui.imencode(".jpg", iMats.getFrame(), jpg);
         if (!queue.offer(new ItemS3(jpg.toArray(), "p")))
             LOG.error("Queue is full, lost frame!");
 
     }
 
     private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + ".jpg", frame);
-        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + "-m.jpg", mask);
+        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + ".jpg", iMats.getFrame());
+        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + "-m.jpg", iMats.getMask());
     }
 }

@@ -24,10 +24,9 @@ public class Vehicle implements Runnable {
     private final Feeder feeder;
     private final LinkedBlockingQueue queue;
     private Core cvCore;
-    private Mat frame, mask;
     private HOGDescriptor Hog;
-    private List<Mat> frames;
     private Consumer consumer;
+    private IMats iMats;
 
     private CascadeClassifier cascade;
 
@@ -48,19 +47,18 @@ public class Vehicle implements Runnable {
         while (true) {
             try {
                 Thread.sleep(50);
-                frames = feeder.getFrames();
-                if (frames == null) {
+                iMats = feeder.getiMats();
+                if (iMats == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
                 }
-                this.frame = frames.get(0);
-                this.mask = frames.get(1);
-                if (!(cvCore.countNonZero(mask) > LOWER_BOUND_PIXELS_VEHICLES
-                        && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
+
+                if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_VEHICLES
+                        && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
                 //LOG.info("passed if");
                 MatOfRect foundLocations = new MatOfRect();
-                cascade.detectMultiScale(mask, foundLocations); //cannot feed frame, because vehicle could be parked
+                cascade.detectMultiScale(iMats.getMask(), foundLocations); //cannot feed frame, because vehicle could be parked
                 if (foundLocations.toList().size() > 0) { //could be size directly
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
@@ -76,19 +74,19 @@ public class Vehicle implements Runnable {
 
     private void queueItem() throws Exception {
 
-        if(System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000){
+        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000) {
             LOG.info("did not queue!");
             return;
         }
 
         MatOfByte jpg = new MatOfByte();
-        Highgui.imencode(".jpg", frame, jpg);
+        Highgui.imencode(".jpg", iMats.getFrame(), jpg);
         if (!queue.offer(new ItemS3(jpg.toArray(), "v")))
             LOG.error("Queue is full, lost frame!");
     }
 
     private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + ".jpg", frame);
-        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + "-m.jpg", mask);
+        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + ".jpg", iMats.getFrame());
+        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + "-m.jpg", iMats.getMask());
     }
 }
