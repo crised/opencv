@@ -48,15 +48,12 @@ public class Pedestrian implements Runnable {
                     Thread.sleep(10000);
                     continue;
                 }
-
                 if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_PEDESTRIANS
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
-                //writeToDisk();
+                writeToDisk();
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
-                //Mat grayscale = new Mat();
-                //frame.convertTo(grayscale, CvType.CV_8U);
-                Hog.detectMultiScale(iMats.getMask(), foundLocations, foundWeights);
+                Hog.detectMultiScale(iMats.getFrame(), foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
@@ -73,7 +70,7 @@ public class Pedestrian implements Runnable {
 
     private void queueItem() throws Exception {
 
-        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000) {
+        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < TIME_BETWEEN_FRAME_EVENTS) {
             LOG.info("did not queue!");
             return;
         }
@@ -86,7 +83,7 @@ public class Pedestrian implements Runnable {
     }
 
     private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + ".jpg", iMats.getFrame());
-        Highgui.imwrite("img/" + "p" + System.currentTimeMillis() + "-m.jpg", iMats.getMask());
+        Highgui.imwrite("img/" + "p" + cvCore.countNonZero(iMats.getMask()) + ".jpg", iMats.getFrame());
+        Highgui.imwrite("img/" + "p" + cvCore.countNonZero(iMats.getMask()) + "-m.jpg", iMats.getMask());
     }
 }

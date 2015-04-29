@@ -2,6 +2,8 @@ package local;
 
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.video.BackgroundSubtractor;
+import org.opencv.video.BackgroundSubtractorMOG;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +30,7 @@ public class Feeder implements Runnable {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
-        // this.bS = new BackgroundSubtractorMOG2(300, 128, true);
+        // this.bS = new BackgroundSubtractorMOG2(3, 16, true);
         this.bS = new BackgroundSubtractorMOG2();
     }
 
@@ -40,7 +42,7 @@ public class Feeder implements Runnable {
             Thread.sleep(IP_RETRY_INTERVAL);
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
-                //Thread.sleep(100); // 0 delay too fast in x220
+                Thread.sleep(FEEDER_FRAME_DELAY); // 0 delay too fast in x220
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     setVideoCapture();

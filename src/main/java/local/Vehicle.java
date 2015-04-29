@@ -58,7 +58,7 @@ public class Vehicle implements Runnable {
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
                 //LOG.info("passed if");
                 MatOfRect foundLocations = new MatOfRect();
-                cascade.detectMultiScale(iMats.getMask(), foundLocations); //cannot feed frame, because vehicle could be parked
+                cascade.detectMultiScale(iMats.getMask(), foundLocations); //frame gives many false positives, due to light.
                 if (foundLocations.toList().size() > 0) { //could be size directly
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
                     writeToDisk();
@@ -74,7 +74,7 @@ public class Vehicle implements Runnable {
 
     private void queueItem() throws Exception {
 
-        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < 5000) {
+        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < TIME_BETWEEN_FRAME_EVENTS) {
             LOG.info("did not queue!");
             return;
         }
@@ -86,7 +86,7 @@ public class Vehicle implements Runnable {
     }
 
     private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + ".jpg", iMats.getFrame());
-        Highgui.imwrite("img/" + "v" + System.currentTimeMillis() + "-m.jpg", iMats.getMask());
+        Highgui.imwrite("img/" + "v" + cvCore.countNonZero(iMats.getMask()) + ".jpg", iMats.getFrame());
+        Highgui.imwrite("img/" + "v" + cvCore.countNonZero(iMats.getMask()) + "-m.jpg", iMats.getMask());
     }
 }
