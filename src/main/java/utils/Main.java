@@ -1,5 +1,9 @@
-package local;
+package utils;
 
+import local.Feeder;
+import local.Pedestrian;
+import local.Periodic;
+import local.Vehicle;
 import net.Consumer;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -7,6 +11,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.DayNight;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -22,8 +27,6 @@ public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-    private static final LinkedBlockingQueue queue = new LinkedBlockingQueue(100);
-
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -31,12 +34,16 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         //checkOpenCV();
+        final WriteToDisk writeToDisk = new WriteToDisk();
+        final DayNight dayNight = new DayNight();
         final Feeder feeder = new Feeder();
-        final Consumer consumer = new Consumer(queue);
+        final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
+
         new Thread(feeder).start();
         new Thread(consumer).start();
-        new Thread(new Pedestrian(feeder, queue, consumer)).start();
-        new Thread(new Vehicle(feeder, queue, consumer)).start();
+        new Thread(new Pedestrian(feeder, consumer, writeToDisk, dayNight)).start();
+        new Thread(new Vehicle(feeder, consumer, writeToDisk, dayNight)).start();
+        new Thread(new Periodic(feeder, consumer, writeToDisk, dayNight)).start();
     }
 
 

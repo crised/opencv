@@ -7,6 +7,9 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.highgui.Highgui;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +76,24 @@ public class Consumer implements Runnable {
         }
     }
 
-    public long getLastUploadedTime() {
-        return lastUploadedTime;
+    public void queueItem(Mat frame) {
+
+        try {
+            if (System.currentTimeMillis() - lastUploadedTime < TIME_BETWEEN_FRAME_EVENTS) {
+                LOG.info("Too many frames in time interval, did not queue!");
+                return;
+            }
+
+            MatOfByte jpg = new MatOfByte();
+            Highgui.imencode(".jpg", frame, jpg);
+            if (!queue.offer(new ItemS3(jpg.toArray(), "p")))
+                LOG.error("Queue is full, lost frame!");
+        } catch (Exception e) {
+            LOG.error("Exception", e);
+        }
+
+
     }
+
 }
 

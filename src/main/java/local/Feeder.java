@@ -2,15 +2,11 @@ package local;
 
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.video.BackgroundSubtractor;
-import org.opencv.video.BackgroundSubtractorMOG;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.IMats;
 
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static utils.Consts.*;
 

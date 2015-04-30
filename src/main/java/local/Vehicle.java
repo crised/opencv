@@ -1,16 +1,14 @@
 package local;
 
 import net.Consumer;
-import net.ItemS3;
 import org.opencv.core.*;
-import org.opencv.highgui.Highgui;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.objdetect.HOGDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+import utils.DayNight;
+import utils.IMats;
+import utils.WriteToDisk;
 
 import static utils.Consts.*;
 
@@ -22,18 +20,20 @@ public class Vehicle implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final Feeder feeder;
-    private final LinkedBlockingQueue queue;
     private Core cvCore;
     private HOGDescriptor Hog;
     private Consumer consumer;
     private IMats iMats;
+    private WriteToDisk writeToDisk;
+    private DayNight dayNight;
 
     private CascadeClassifier cascade;
 
-    public Vehicle(Feeder feeder, LinkedBlockingQueue queue, Consumer consumer) {
+    public Vehicle(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
         this.feeder = feeder;
-        this.queue = queue;
         this.consumer = consumer;
+        this.writeToDisk = writeToDisk;
+        this.dayNight = dayNight;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
@@ -47,13 +47,13 @@ public class Vehicle implements Runnable {
         while (true) {
             try {
                 Thread.sleep(50);
+                if (!dayNight.isDay()) return;
                 iMats = feeder.getiMats();
                 if (iMats == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
                 }
-
                 if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_VEHICLES
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
                 //LOG.info("passed if");
@@ -61,8 +61,9 @@ public class Vehicle implements Runnable {
                 cascade.detectMultiScale(iMats.getMask(), foundLocations); //frame gives many false positives, due to light.
                 if (foundLocations.toList().size() > 0) { //could be size directly
                     LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
-                    writeToDisk();
-                    queueItem();
+                    writeToDisk.writeToDisk("p", iMats.getFrame());
+                    writeToDisk.writeToDisk("p.m", iMats.getMask());
+                    consumer.queueItem(iMats.getFrame());
                 }
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
@@ -72,21 +73,5 @@ public class Vehicle implements Runnable {
         }
     }
 
-    private void queueItem() throws Exception {
 
-        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < TIME_BETWEEN_FRAME_EVENTS) {
-            LOG.info("did not queue!");
-            return;
-        }
-
-        MatOfByte jpg = new MatOfByte();
-        Highgui.imencode(".jpg", iMats.getFrame(), jpg);
-        if (!queue.offer(new ItemS3(jpg.toArray(), "v")))
-            LOG.error("Queue is full, lost frame!");
-    }
-
-    private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "v" + cvCore.countNonZero(iMats.getMask()) + ".jpg", iMats.getFrame());
-        Highgui.imwrite("img/" + "v" + cvCore.countNonZero(iMats.getMask()) + "-m.jpg", iMats.getMask());
-    }
 }

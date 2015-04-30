@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
+import utils.DayNight;
 
 import static utils.Consts.*;
 
@@ -18,9 +19,14 @@ public class Small {
 
 
     @Test
-    public void firstTest() {
+    public void isDay() {
 
         LOG.info("hello");
+        DayNight dayNight = new DayNight();
+        LOG.info(String.valueOf(dayNight.isDay()));
+        /*
+        LOG.info("Sunrise: " + String.valueOf(dayNight.getSunrise().getTime().toString()));
+        LOG.info("Sunset: " + String.valueOf(dayNight.getSunset().getTime().toString()));*/
 
 
     }

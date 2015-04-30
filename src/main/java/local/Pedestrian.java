@@ -1,17 +1,14 @@
 package local;
 
 import net.Consumer;
-import net.ItemS3;
 import org.opencv.core.*;
-import org.opencv.highgui.Highgui;
-import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.HOGDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.DayNight;
+import utils.IMats;
+import utils.WriteToDisk;
 
-import java.awt.*;
-import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static utils.Consts.*;
 
@@ -23,16 +20,18 @@ public class Pedestrian implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private final Feeder feeder;
-    private final LinkedBlockingQueue queue;
     private Core cvCore;
     private HOGDescriptor Hog;
     private Consumer consumer;
     private IMats iMats;
+    private WriteToDisk writeToDisk;
+    private DayNight dayNight;
 
-    public Pedestrian(Feeder feeder, LinkedBlockingQueue queue, Consumer consumer) {
+    public Pedestrian(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
         this.feeder = feeder;
-        this.queue = queue;
         this.consumer = consumer;
+        this.writeToDisk = writeToDisk;
+        this.dayNight = dayNight;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
@@ -44,6 +43,7 @@ public class Pedestrian implements Runnable {
         while (true) {
             try {
                 Thread.sleep(50);
+                if (!dayNight.isDay()) continue;
                 iMats = feeder.getiMats();
                 if (iMats == null) {
                     LOG.info("waiting frame list");
@@ -52,19 +52,14 @@ public class Pedestrian implements Runnable {
                 }
                 if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_PEDESTRIANS
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
-                writeToDisk();
                 MatOfRect foundLocations = new MatOfRect();
                 MatOfDouble foundWeights = new MatOfDouble();
-                Mat convertedFrame = new Mat();
-                Imgproc.cvtColor(iMats.getFrame(), convertedFrame, Imgproc.COLOR_BGR2GRAY);
-                Highgui.imwrite("img/" + "GRAY" + cvCore.countNonZero(iMats.getMask()) + ".jpg", convertedFrame);
-                Imgproc.equalizeHist(convertedFrame, convertedFrame);
-                Highgui.imwrite("img/" + "EQUA" + cvCore.countNonZero(iMats.getMask()) + ".jpg", convertedFrame);
-                Hog.detectMultiScale(convertedFrame, foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
+                Hog.detectMultiScale(iMats.getFrame(), foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
                 if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
                     LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
-                    writeToDisk();
-                    queueItem();
+                    writeToDisk.writeToDisk("p", iMats.getFrame());
+                    writeToDisk.writeToDisk("p.m", iMats.getMask());
+                    consumer.queueItem(iMats.getFrame());
                 }
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
@@ -75,22 +70,4 @@ public class Pedestrian implements Runnable {
     }
 
 
-    private void queueItem() throws Exception {
-
-        if (System.currentTimeMillis() - consumer.getLastUploadedTime() < TIME_BETWEEN_FRAME_EVENTS) {
-            LOG.info("did not queue!");
-            return;
-        }
-
-        MatOfByte jpg = new MatOfByte();
-        Highgui.imencode(".jpg", iMats.getFrame(), jpg);
-        if (!queue.offer(new ItemS3(jpg.toArray(), "p")))
-            LOG.error("Queue is full, lost frame!");
-
-    }
-
-    private void writeToDisk() throws Exception {
-        Highgui.imwrite("img/" + "p" + cvCore.countNonZero(iMats.getMask()) + ".jpg", iMats.getFrame());
-        Highgui.imwrite("img/" + "p" + cvCore.countNonZero(iMats.getMask()) + "-m.jpg", iMats.getMask());
-    }
 }
