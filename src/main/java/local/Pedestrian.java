@@ -39,10 +39,8 @@ public class Pedestrian implements Runnable {
 
     @Override
     public void run() {
-        LOG.info("Pedestrian Started");
         while (true) {
             try {
-                Thread.sleep(50);
                 if (!dayNight.isDay()) continue;
                 iMats = feeder.getiMats();
                 if (iMats == null) {
@@ -52,15 +50,17 @@ public class Pedestrian implements Runnable {
                 }
                 if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_PEDESTRIANS
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_PEDESTRIANS)) continue;
-                MatOfRect foundLocations = new MatOfRect();
-                MatOfDouble foundWeights = new MatOfDouble();
-                Hog.detectMultiScale(iMats.getFrame(), foundLocations, foundWeights); //frame for pedestrian detection, could be mask. -> needs tuning.
-                if (foundLocations.toList().size() > 0 || foundLocations.toList().size() > 0) {
-                    LOG.info("Pedestrian Locations " + String.valueOf(foundLocations.toList().size()));
-                    writeToDisk.writeToDisk("p", iMats.getFrame());
-                    writeToDisk.writeToDisk("p.m", iMats.getMask());
-                    consumer.queueItem(iMats.getFrame());
-                }
+                MatOfRect mLocations = new MatOfRect();
+                MatOfRect fLocations = new MatOfRect();
+                MatOfDouble mWeights = new MatOfDouble();
+                MatOfDouble fWeights = new MatOfDouble();
+                Hog.detectMultiScale(iMats.getMask(), mLocations, mWeights);
+                Hog.detectMultiScale(iMats.getFrame(), fLocations, fWeights);
+                if (mLocations.empty() && fLocations.empty() && mWeights.empty() && fWeights.empty())
+                    continue;
+                LOG.info("Pedestrian Locations summed " + String.valueOf(mLocations.toList().size() + fLocations.toList().size()));
+                writeToDisk.writeToDisk("p", iMats);
+                consumer.queueItem(iMats.getFrame());
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
             } catch (Exception e) {
@@ -68,6 +68,4 @@ public class Pedestrian implements Runnable {
             }
         }
     }
-
-
 }

@@ -17,17 +17,29 @@ public class DayNight {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-
     private SunriseSunsetCalculator calculator;
     private Calendar now, sunrise, sunset;
     private boolean dayMode;
+    private int counter;
 
     public DayNight() {
         Location location = new Location(LATITUDE, LONGITUDE);
         calculator = new SunriseSunsetCalculator(location, TimeZone.getTimeZone("GMT-3:00"));
+        refresh();
     }
 
     public boolean isDay() {
+        if (counter < 500) {
+            counter++;
+            return dayMode;
+        } else {
+            counter = 0;
+            refresh();
+            return dayMode;
+        }
+    }
+
+    private void refresh() {
         now = Calendar.getInstance();
         sunrise = calculator.getOfficialSunriseCalendarForDate(now);
         sunset = calculator.getOfficialSunsetCalendarForDate(now);
@@ -37,7 +49,6 @@ public class DayNight {
             else LOG.info("Night Mode");
         }
         dayMode = isDay;
-        return isDay;
     }
 
 }

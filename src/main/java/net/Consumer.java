@@ -77,13 +77,11 @@ public class Consumer implements Runnable {
     }
 
     public void queueItem(Mat frame) {
-
         try {
             if (System.currentTimeMillis() - lastUploadedTime < TIME_BETWEEN_FRAME_EVENTS) {
                 LOG.info("Too many frames in time interval, did not queue!");
                 return;
             }
-
             MatOfByte jpg = new MatOfByte();
             Highgui.imencode(".jpg", frame, jpg);
             if (!queue.offer(new ItemS3(jpg.toArray(), "p")))

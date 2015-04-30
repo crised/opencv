@@ -36,9 +36,9 @@ public class Main {
         //checkOpenCV();
         final WriteToDisk writeToDisk = new WriteToDisk();
         final DayNight dayNight = new DayNight();
+
         final Feeder feeder = new Feeder();
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
-
         new Thread(feeder).start();
         new Thread(consumer).start();
         new Thread(new Pedestrian(feeder, consumer, writeToDisk, dayNight)).start();

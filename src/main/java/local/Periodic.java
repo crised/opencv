@@ -12,7 +12,7 @@ import static utils.Consts.*;
 
 /**
  * Created by crised on 4/30/15.
- * This class can serve as backup too.
+ * This class can serve as backup to files too.
  */
 public class Periodic implements Runnable {
 
@@ -33,10 +33,9 @@ public class Periodic implements Runnable {
 
     @Override
     public void run() {
-        LOG.info("Pedestrian Started");
         while (true) {
             try {
-                Thread.sleep(50);git
+                Thread.sleep(50);
                 if (dayNight.isDay()) continue;
                 Thread.sleep(PERIODIC_NIGHT_MODE);
                 iMats = feeder.getiMats();

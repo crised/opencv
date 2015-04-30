@@ -43,10 +43,9 @@ public class Vehicle implements Runnable {
 
     @Override
     public void run() {
-        LOG.info("Vehicle Started");
         while (true) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(100);
                 if (!dayNight.isDay()) return;
                 iMats = feeder.getiMats();
                 if (iMats == null) {
@@ -56,15 +55,14 @@ public class Vehicle implements Runnable {
                 }
                 if (!(cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS_VEHICLES
                         && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS_VEHICLES)) continue;
-                //LOG.info("passed if");
-                MatOfRect foundLocations = new MatOfRect();
-                cascade.detectMultiScale(iMats.getMask(), foundLocations); //frame gives many false positives, due to light.
-                if (foundLocations.toList().size() > 0) { //could be size directly
-                    LOG.info("Vehicle Locations " + String.valueOf(foundLocations.toList().size()));
-                    writeToDisk.writeToDisk("p", iMats.getFrame());
-                    writeToDisk.writeToDisk("p.m", iMats.getMask());
-                    consumer.queueItem(iMats.getFrame());
-                }
+                MatOfRect mLocations = new MatOfRect();
+                cascade.detectMultiScale(iMats.getMask(), mLocations);
+                MatOfRect fLocations = new MatOfRect();
+                cascade.detectMultiScale(iMats.getFrame(), fLocations);
+                if (mLocations.empty() && fLocations.empty()) continue;
+                LOG.info("Vehicle Locations " + String.valueOf(mLocations.toList().size() + fLocations.toList().size()));
+                writeToDisk.writeToDisk("v" + cvCore.countNonZero(iMats.getMask()), iMats);
+                consumer.queueItem(iMats.getFrame());
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
             } catch (Exception e) {
