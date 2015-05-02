@@ -41,6 +41,7 @@ public class Pedestrian implements Runnable {
     public void run() {
         while (true) {
             try {
+                Thread.sleep(50);
                 if (!dayNight.isDay()) continue;
                 iMats = feeder.getiMats();
                 if (iMats == null) {

@@ -37,6 +37,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.luckycatlabs</groupId>
+            <artifactId>SunriseSunsetCalculator</artifactId>
+            <version>1.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>6.8.8</version>
@@ -47,7 +53,6 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
             <version>1.9.30</version>
-
         </dependency>
 
     </dependencies>
@@ -61,7 +66,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>local.Main</mainClass>
+                            <mainClass>utils.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
