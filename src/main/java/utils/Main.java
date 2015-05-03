@@ -27,8 +27,6 @@ public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-
-
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
@@ -36,14 +34,13 @@ public class Main {
     public static void main(String[] args) throws Exception {
         //checkOpenCV();
         final WriteToDisk writeToDisk = new WriteToDisk();
-        final DayNight dayNight = new DayNight();
 
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(consumer).start();
         new Thread(new Feeder()).start();
-        new Thread(new Pedestrian(consumer, writeToDisk, dayNight)).start();
-        new Thread(new Vehicle(consumer, writeToDisk, dayNight)).start();
-        new Thread(new Periodic(consumer, writeToDisk, dayNight)).start();
+        new Thread(new Pedestrian(consumer, writeToDisk)).start();
+        new Thread(new Vehicle(consumer, writeToDisk)).start();
+        new Thread(new Periodic(consumer, writeToDisk)).start();
     }
 
 

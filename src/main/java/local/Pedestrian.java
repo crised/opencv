@@ -23,12 +23,10 @@ public class Pedestrian implements Runnable {
     private HOGDescriptor Hog;
     private Consumer consumer;
     private WriteToDisk writeToDisk;
-    private DayNight dayNight;
 
-    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
-        this.dayNight = dayNight;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());

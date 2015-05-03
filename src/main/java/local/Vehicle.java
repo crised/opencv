@@ -23,14 +23,12 @@ public class Vehicle implements Runnable {
     private HOGDescriptor Hog;
     private Consumer consumer;
     private WriteToDisk writeToDisk;
-    private DayNight dayNight;
 
     private CascadeClassifier cascade;
 
-    public Vehicle(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Vehicle(Consumer consumer, WriteToDisk writeToDisk) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
-        this.dayNight = dayNight;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());

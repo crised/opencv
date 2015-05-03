@@ -7,7 +7,9 @@ public final class Consts {
 
     private Consts() {
     }
+
     public static IMats iMats;
+    public static final DayNight dayNight = new DayNight();
 
 
     public static final String CL_TELEMATIC = "cl.telematic";

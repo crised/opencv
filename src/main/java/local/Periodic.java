@@ -20,12 +20,10 @@ public class Periodic implements Runnable {
 
     private Consumer consumer;
     private WriteToDisk writeToDisk;
-    private DayNight dayNight;
 
-    public Periodic(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Periodic(Consumer consumer, WriteToDisk writeToDisk) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
-        this.dayNight = dayNight;
     }
 
     @Override

@@ -50,6 +50,7 @@ public class Feeder implements Runnable {
                     Thread.sleep(IP_RETRY_INTERVAL);
                     continue;
                 }
+                if(!dayNight.isDay()) continue;
                 Imgproc.blur(frame, blur, new Size(8.0, 8.0));
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
