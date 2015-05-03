@@ -26,6 +26,8 @@ public class Main {
     //JAVA_HOME to correct jvm
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
+    public static IMats iMats;
+
 
 
     static {
@@ -36,7 +38,6 @@ public class Main {
         //checkOpenCV();
         final WriteToDisk writeToDisk = new WriteToDisk();
         final DayNight dayNight = new DayNight();
-        IMats iMats = new IMats(null, null); //iMat object should be always available for other threads.
 
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(consumer).start();

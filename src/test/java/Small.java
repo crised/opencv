@@ -31,7 +31,6 @@ public class Small {
 
     }
 
-    public void
 
     @Test(enabled = false)
     public void aws() {

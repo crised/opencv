@@ -56,7 +56,7 @@ public class Feeder implements Runnable {
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
-                this.iMats = new IMats(frame, mask);
+                iMats = new IMats(frame, mask);
 
             }
         } catch (InterruptedException e) {

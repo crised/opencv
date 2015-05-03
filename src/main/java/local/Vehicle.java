@@ -46,7 +46,7 @@ public class Vehicle implements Runnable {
             try {
                 Thread.sleep(VEHICLE_DELAY);
                 if (!dayNight.isDay()) return;
-                if (iMats.getFrame() == null) {
+                if (iMats == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;

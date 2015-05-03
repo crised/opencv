@@ -36,7 +36,7 @@ public class Periodic implements Runnable {
             try {
                 Thread.sleep(PERIODIC_DELAY);
                 if (dayNight.isDay()) continue;
-                if (iMats.getFrame() == null) {
+                if (iMats == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
