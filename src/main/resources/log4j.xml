@@ -20,7 +20,7 @@
     <root>
         <level value="ALL"/>
         <appender-ref ref="MainLogFile"/>
-        <appender-ref ref="Console"/>
+        <!--<appender-ref ref="Console"/>-->
     </root>
 
 </log4j:configuration>
