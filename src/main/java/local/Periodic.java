@@ -18,14 +18,12 @@ public class Periodic implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-    private final Feeder feeder;
     private Consumer consumer;
     private IMats iMats;
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Periodic(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
-        this.feeder = feeder;
+    public Periodic(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
@@ -38,13 +36,13 @@ public class Periodic implements Runnable {
             try {
                 Thread.sleep(PERIODIC_DELAY);
                 if (dayNight.isDay()) continue;
-                Thread.sleep(PERIODIC_NIGHT_MODE);
                 if (iMats.getFrame() == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
                 }
                 consumer.queueItem(iMats.getFrame());
+                Thread.sleep(PERIODIC_NIGHT_MODE);
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
             } catch (Exception e) {

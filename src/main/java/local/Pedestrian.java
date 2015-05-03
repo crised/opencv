@@ -19,7 +19,6 @@ public class Pedestrian implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
-    private final Feeder feeder;
     private Core cvCore;
     private HOGDescriptor Hog;
     private Consumer consumer;
@@ -27,8 +26,7 @@ public class Pedestrian implements Runnable {
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Pedestrian(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
-        this.feeder = feeder;
+    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
