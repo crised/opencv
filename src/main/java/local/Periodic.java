@@ -19,15 +19,13 @@ public class Periodic implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private Consumer consumer;
-    private IMats iMats;
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Periodic(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
+    public Periodic(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
-        this.iMats = iMats;
     }
 
     @Override

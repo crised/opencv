@@ -21,15 +21,13 @@ public class Feeder implements Runnable {
 
     private Mat frame, mask, blur; //Feeder frameReady
     private BackgroundSubtractorMOG2 bS;
-    private IMats iMats;
     private org.opencv.highgui.VideoCapture vCap;
 
-    public Feeder(IMats iMats) {
+    public Feeder() {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
         this.bS = new BackgroundSubtractorMOG2();
-        this.iMats = iMats;
     }
 
     @Override

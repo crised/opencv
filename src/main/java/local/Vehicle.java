@@ -22,13 +22,12 @@ public class Vehicle implements Runnable {
     private Core cvCore;
     private HOGDescriptor Hog;
     private Consumer consumer;
-    private IMats iMats;
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
     private CascadeClassifier cascade;
 
-    public Vehicle(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
+    public Vehicle(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
@@ -36,7 +35,6 @@ public class Vehicle implements Runnable {
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
         this.cascade = new CascadeClassifier("/home/crised/IdeaProjects/opencv/src/main/resources/cars3.xml");
-        this.iMats = iMats;
     }
 
 

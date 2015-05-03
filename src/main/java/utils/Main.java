@@ -26,7 +26,6 @@ public class Main {
     //JAVA_HOME to correct jvm
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
-    public static IMats iMats;
 
 
 
@@ -41,10 +40,10 @@ public class Main {
 
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(consumer).start();
-        new Thread(new Feeder(iMats)).start();
-        new Thread(new Pedestrian(consumer, writeToDisk, dayNight, iMats)).start();
-        new Thread(new Vehicle(consumer, writeToDisk, dayNight, iMats)).start();
-        new Thread(new Periodic(consumer, writeToDisk, dayNight, iMats)).start();
+        new Thread(new Feeder()).start();
+        new Thread(new Pedestrian(consumer, writeToDisk, dayNight)).start();
+        new Thread(new Vehicle(consumer, writeToDisk, dayNight)).start();
+        new Thread(new Periodic(consumer, writeToDisk, dayNight)).start();
     }
 
 

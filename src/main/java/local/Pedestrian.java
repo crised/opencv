@@ -22,18 +22,16 @@ public class Pedestrian implements Runnable {
     private Core cvCore;
     private HOGDescriptor Hog;
     private Consumer consumer;
-    private IMats iMats;
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
+    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
-        this.iMats = iMats;
     }
 
     @Override
