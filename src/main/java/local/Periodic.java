@@ -24,22 +24,22 @@ public class Periodic implements Runnable {
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Periodic(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Periodic(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
         this.feeder = feeder;
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.dayNight = dayNight;
+        this.iMats = iMats;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(PERIODIC_DELAY);
                 if (dayNight.isDay()) continue;
                 Thread.sleep(PERIODIC_NIGHT_MODE);
-                iMats = feeder.getiMats();
-                if (iMats == null) {
+                if (iMats.getFrame() == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;

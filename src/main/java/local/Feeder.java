@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import utils.IMats;
 
 
+import java.net.InetAddress;
+
 import static utils.Consts.*;
 
 /**
@@ -22,12 +24,12 @@ public class Feeder implements Runnable {
     private IMats iMats;
     private org.opencv.highgui.VideoCapture vCap;
 
-    public Feeder() {
+    public Feeder(IMats iMats) {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
-        // this.bS = new BackgroundSubtractorMOG2(3, 16, true);
         this.bS = new BackgroundSubtractorMOG2();
+        this.iMats = iMats;
     }
 
     @Override
@@ -38,7 +40,12 @@ public class Feeder implements Runnable {
             Thread.sleep(IP_RETRY_INTERVAL);
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
-                Thread.sleep(FEEDER_FRAME_DELAY); // 0 delay too fast in x220
+                Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
+                if (!InetAddress.getByName(IP_ADDRESS).isReachable(1000)) {
+                    LOG.error("Camera not reachable");
+                    Thread.sleep(5000);
+                    continue;
+                }
                 if (!vCap.read(frame)) {
                     LOG.error("Couldn't read Video Stream");
                     setVideoCapture();
@@ -65,7 +72,4 @@ public class Feeder implements Runnable {
         if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
     }
 
-    public IMats getiMats() {
-        return iMats;
-    }
 }

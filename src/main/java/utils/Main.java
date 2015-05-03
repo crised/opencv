@@ -36,14 +36,15 @@ public class Main {
         //checkOpenCV();
         final WriteToDisk writeToDisk = new WriteToDisk();
         final DayNight dayNight = new DayNight();
+        IMats iMats = new IMats(null, null); //iMat object should be always available for other threads.
 
-        final Feeder feeder = new Feeder();
+        final Feeder feeder = new Feeder(iMats);
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(feeder).start();
         new Thread(consumer).start();
-        new Thread(new Pedestrian(feeder, consumer, writeToDisk, dayNight)).start();
-        new Thread(new Vehicle(feeder, consumer, writeToDisk, dayNight)).start();
-        new Thread(new Periodic(feeder, consumer, writeToDisk, dayNight)).start();
+        new Thread(new Pedestrian(feeder, consumer, writeToDisk, dayNight, iMats)).start();
+        new Thread(new Vehicle(feeder, consumer, writeToDisk, dayNight, iMats)).start();
+        new Thread(new Periodic(feeder, consumer, writeToDisk, dayNight, iMats)).start();
     }
 
 

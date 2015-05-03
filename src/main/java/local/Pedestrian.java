@@ -27,7 +27,7 @@ public class Pedestrian implements Runnable {
     private WriteToDisk writeToDisk;
     private DayNight dayNight;
 
-    public Pedestrian(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Pedestrian(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
         this.feeder = feeder;
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
@@ -35,16 +35,16 @@ public class Pedestrian implements Runnable {
         this.cvCore = new Core();
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
+        this.iMats = iMats;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(PEDESTRIAN_DELAY);
                 if (!dayNight.isDay()) continue;
-                iMats = feeder.getiMats();
-                if (iMats == null) {
+                if (iMats.getFrame() == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;

@@ -29,7 +29,7 @@ public class Vehicle implements Runnable {
 
     private CascadeClassifier cascade;
 
-    public Vehicle(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight) {
+    public Vehicle(Feeder feeder, Consumer consumer, WriteToDisk writeToDisk, DayNight dayNight, IMats iMats) {
         this.feeder = feeder;
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
@@ -38,6 +38,7 @@ public class Vehicle implements Runnable {
         this.Hog = new HOGDescriptor();
         this.Hog.setSVMDetector(HOGDescriptor.getDefaultPeopleDetector());
         this.cascade = new CascadeClassifier("/home/crised/IdeaProjects/opencv/src/main/resources/cars3.xml");
+        this.iMats = iMats;
     }
 
 
@@ -45,10 +46,9 @@ public class Vehicle implements Runnable {
     public void run() {
         while (true) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(VEHICLE_DELAY);
                 if (!dayNight.isDay()) return;
-                iMats = feeder.getiMats();
-                if (iMats == null) {
+                if (iMats.getFrame() == null) {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;

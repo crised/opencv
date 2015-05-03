@@ -10,10 +10,14 @@ public final class Consts {
 
     public static final String CL_TELEMATIC = "cl.telematic";
 
-    public static final String IP_STREAM_ADDRESS = "http://192.168.1.67/videostream.cgi?user=admin&pwd=admin";
+    public static final String IP_ADDRESS = "http://192.168.1.10/";
+    public static final String IP_STREAM_ADDRESS = IP_ADDRESS + "videostream.cgi?user=admin&pwd=admin";
     public static final int IP_RETRY_INTERVAL = 4_000;
     public static final int TIME_BETWEEN_FRAME_EVENTS = 5_000;
-    public static final int FEEDER_FRAME_DELAY = 10;
+    public static final int FEEDER_DELAY = 500;
+    public static final int PEDESTRIAN_DELAY = 500;
+    public static final int VEHICLE_DELAY = 500;
+    public static final int PERIODIC_DELAY = 500;
     public static final long PERIODIC_NIGHT_MODE = 30 * 60 * 1_000; //30 Minutes
     //use high pixels, to be very classifier.
     public static final double LOWER_BOUND_PIXELS_PEDESTRIANS = 1000; // 640 x 480 x 0.0005 = 150

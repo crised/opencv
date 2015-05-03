@@ -2,7 +2,7 @@
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
     <!-- general application log -->
     <appender name="MainLogFile" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="log/server.log"/>
+        <param name="File" value="/opencv-log/server.log"/>
         <param name="DatePattern" value=".yyyy-MM-dd"/>
         <param name="Threshold" value="INFO"/>
         <layout class="org.apache.log4j.PatternLayout">
@@ -17,14 +17,8 @@
         </layout>
     </appender>
 
-    <!--
-    <logger name="cl.telematic">
-        <level value="ALL"/>
-        <appender-ref ref="MainLogFile"/>
-        <appender-ref ref="Console"/>
-    </logger>-->
     <root>
-        <level value="INFO"/>
+        <level value="ALL"/>
         <appender-ref ref="MainLogFile"/>
         <appender-ref ref="Console"/>
     </root>
