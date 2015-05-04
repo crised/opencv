@@ -20,14 +20,7 @@ public class Small {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
 
-    @Test
-    public void Formatter(){
 
-        Format formatter = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss_X");
-        LOG.info(formatter.format(System.currentTimeMillis()));
-
-
-    }
 
     @Test(enabled=false)
     public void isDay() {

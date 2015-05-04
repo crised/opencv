@@ -42,13 +42,13 @@ public class Consumer implements Runnable {
             while (true) {
                 ItemS3 itemS3 = (ItemS3) queue.take(); //blocking method
                 LOG.info("Uploading image: " + itemS3.getFileName());
-                lastUploadedTime = System.currentTimeMillis();
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(itemS3.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,
                         itemS3.getFileName(),
                         new ByteArrayInputStream(itemS3.getData()),
                         objectMetadata));
+                lastUploadedTime = System.currentTimeMillis(); //modify only after upload.
                 //Consider saving the image in case of network error.
             }
         } catch (AmazonServiceException ase) {
@@ -76,7 +76,7 @@ public class Consumer implements Runnable {
         }
     }
 
-    public void queueItem(Mat frame) {
+    public void queueItem(Mat frame, String kind) {
         try {
             if (System.currentTimeMillis() - lastUploadedTime < TIME_BETWEEN_FRAME_EVENTS) {
                 LOG.info("Too many frames in time interval, did not queue!");
@@ -84,7 +84,7 @@ public class Consumer implements Runnable {
             }
             MatOfByte jpg = new MatOfByte();
             Highgui.imencode(".jpg", frame, jpg);
-            if (!queue.offer(new ItemS3(jpg.toArray(), "p")))
+            if (!queue.offer(new ItemS3(jpg.toArray(), kind)))
                 LOG.error("Queue is full, lost frame!");
         } catch (Exception e) {
             LOG.error("Exception", e);
@@ -92,11 +92,7 @@ public class Consumer implements Runnable {
     }
 
     public boolean IsHeartBeatNeeded() {
-
-        if (System.currentTimeMillis() - lastUploadedTime > HEART_BEAT_TIME) {
-            LOG.info("HeartBeat image");
-            return true;
-        }
+        if (System.currentTimeMillis() - lastUploadedTime > HEART_BEAT_TIME) return true;
         return false;
     }
 

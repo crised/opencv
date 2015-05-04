@@ -15,7 +15,7 @@ import static utils.Consts.*;
 /**
  * Created by crised on 4/27/15.
  */
-public class Pedestrian implements Runnable {
+public class Human implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
@@ -24,7 +24,7 @@ public class Pedestrian implements Runnable {
     private Consumer consumer;
     private WriteToDisk writeToDisk;
 
-    public Pedestrian(Consumer consumer, WriteToDisk writeToDisk) {
+    public Human(Consumer consumer, WriteToDisk writeToDisk) {
         this.consumer = consumer;
         this.writeToDisk = writeToDisk;
         this.cvCore = new Core();
@@ -54,8 +54,8 @@ public class Pedestrian implements Runnable {
                 if (mLocations.empty() && fLocations.empty() && mWeights.empty() && fWeights.empty())
                     continue;
                 LOG.info("Pedestrian Locations summed " + String.valueOf(mLocations.toList().size() + fLocations.toList().size()));
-                writeToDisk.writeToDisk("p", iMats);
-                consumer.queueItem(iMats.getFrame());
+                writeToDisk.writeToDisk(HUMAN_KIND, iMats);
+                consumer.queueItem(iMats.getFrame(), HUMAN_KIND);
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
             } catch (Exception e) {

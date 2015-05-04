@@ -16,8 +16,7 @@ public class ItemS3 {
     public ItemS3(byte[] data, String kind) {
         this.timeStamp = System.currentTimeMillis();
         this.data = data;
-        Format formatter = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss_X");
-        this.fileName = formatter.format(timeStamp) + kind + ".jpg";
+        this.fileName = timeStamp + kind + ".jpg";
     }
 
     public long getTimeStamp() {

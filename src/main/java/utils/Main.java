@@ -1,7 +1,7 @@
 package utils;
 
 import local.Feeder;
-import local.Pedestrian;
+import local.Human;
 import local.Periodic;
 import local.Vehicle;
 import net.Consumer;
@@ -11,7 +11,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Scalar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.DayNight;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -38,7 +37,7 @@ public class Main {
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(consumer).start();
         new Thread(new Feeder()).start();
-        new Thread(new Pedestrian(consumer, writeToDisk)).start();
+        new Thread(new Human(consumer, writeToDisk)).start();
         new Thread(new Vehicle(consumer, writeToDisk)).start();
         new Thread(new Periodic(consumer, writeToDisk)).start();
     }

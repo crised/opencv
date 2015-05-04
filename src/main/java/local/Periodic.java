@@ -16,8 +16,6 @@ import static utils.Consts.*;
  */
 public class Periodic implements Runnable {
 
-    //TODO: HeartBeat image, if no motion has detected in 30 mins..
-
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private Consumer consumer;
@@ -37,10 +35,10 @@ public class Periodic implements Runnable {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
-                }
-                if (consumer.IsHeartBeatNeeded()) consumer.queueItem(iMats.getFrame());
+                }//heartbeat image could be same interval day and night.
+                if (consumer.IsHeartBeatNeeded()) consumer.queueItem(iMats.getFrame(), PERIODIC_KIND);
                 if (dayNight.isDay()) continue;
-                consumer.queueItem(iMats.getFrame());
+                consumer.queueItem(iMats.getFrame(), PERIODIC_KIND);
                 Thread.sleep(PERIODIC_NIGHT_MODE);
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);

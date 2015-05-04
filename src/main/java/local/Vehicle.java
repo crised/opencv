@@ -56,7 +56,7 @@ public class Vehicle implements Runnable {
                 if (mLocations.empty() && fLocations.empty()) continue;
                 LOG.info("Vehicle Locations " + String.valueOf(mLocations.toList().size() + fLocations.toList().size()));
                 writeToDisk.writeToDisk("v" + cvCore.countNonZero(iMats.getMask()), iMats);
-                consumer.queueItem(iMats.getFrame());
+                consumer.queueItem(iMats.getFrame(), VEHICLE_KIND);
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
             } catch (Exception e) {
