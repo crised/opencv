@@ -89,8 +89,15 @@ public class Consumer implements Runnable {
         } catch (Exception e) {
             LOG.error("Exception", e);
         }
+    }
 
+    public boolean IsHeartBeatNeeded() {
 
+        if (System.currentTimeMillis() - lastUploadedTime > HEART_BEAT_TIME) {
+            LOG.info("HeartBeat image");
+            return true;
+        }
+        return false;
     }
 
 }
