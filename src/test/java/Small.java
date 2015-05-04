@@ -12,6 +12,8 @@ import utils.DayNight;
 import static utils.Consts.*;
 
 import java.io.File;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 
 public class Small {
 
@@ -19,6 +21,15 @@ public class Small {
 
 
     @Test
+    public void Formatter(){
+
+        Format formatter = new SimpleDateFormat("dd-MM-yyyy_HH:mm:ss_X");
+        LOG.info(formatter.format(System.currentTimeMillis()));
+
+
+    }
+
+    @Test(enabled=false)
     public void isDay() {
 
         LOG.info("hello");
