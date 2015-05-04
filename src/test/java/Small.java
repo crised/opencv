@@ -20,6 +20,19 @@ public class Small {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
 
+    @Test
+    public void lex(){
+
+        String one = "1430761577877p.jpg";
+        String two = "1430761584010p.jpg";
+
+        String three = "1430761577876";
+
+        LOG.info(String.valueOf(three.compareTo(one)));
+        LOG.info(String.valueOf(three.compareTo(two)));
+  //negative results means is three is first in order.
+
+    }
 
 
     @Test(enabled=false)

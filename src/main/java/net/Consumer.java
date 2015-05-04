@@ -42,14 +42,14 @@ public class Consumer implements Runnable {
             while (true) {
                 ItemS3 itemS3 = (ItemS3) queue.take(); //blocking method
                 LOG.info("Uploading image: " + itemS3.getFileName());
+                lastUploadedTime = System.currentTimeMillis();
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(itemS3.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,
                         itemS3.getFileName(),
                         new ByteArrayInputStream(itemS3.getData()),
                         objectMetadata));
-                lastUploadedTime = System.currentTimeMillis(); //modify only after upload.
-                //Consider saving the image in case of network error.
+
             }
         } catch (AmazonServiceException ase) {
             LOG.error("Caught an AmazonServiceException, which " +

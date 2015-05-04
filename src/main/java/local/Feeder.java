@@ -39,7 +39,7 @@ public class Feeder implements Runnable {
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
                 Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
-                if (!InetAddress.getByName(IP_ADDRESS).isReachable(1000)) {
+                if (!InetAddress.getByName(IP_ADDRESS).isReachable(5_000)) {
                     LOG.error("Camera not reachable");
                     Thread.sleep(5000);
                     continue;
