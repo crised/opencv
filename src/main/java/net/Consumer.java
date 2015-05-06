@@ -27,7 +27,6 @@ public class Consumer implements Runnable {
 
     private final LinkedBlockingQueue queue;
     private AmazonS3 s3client;
-    private long lastUploadedTime;
 
     public Consumer(LinkedBlockingQueue queue) {
         this.queue = queue;
@@ -36,20 +35,17 @@ public class Consumer implements Runnable {
 
     @Override
     public void run() {
-
         try {
             LOG.info("Consumer started");
             while (true) {
                 ItemS3 itemS3 = (ItemS3) queue.take(); //blocking method
                 LOG.info("Uploading image: " + itemS3.getFileName());
-                lastUploadedTime = System.currentTimeMillis();
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(itemS3.getData().length);
                 s3client.putObject(new PutObjectRequest(BUCKET_NAME,
                         itemS3.getFileName(),
                         new ByteArrayInputStream(itemS3.getData()),
                         objectMetadata));
-
             }
         } catch (AmazonServiceException ase) {
             LOG.error("Caught an AmazonServiceException, which " +
@@ -76,25 +72,17 @@ public class Consumer implements Runnable {
         }
     }
 
-    public void queueItem(Mat frame, String kind) {
+    public void queueItem(Mat frame, String id) {
         try {
-            if (System.currentTimeMillis() - lastUploadedTime < TIME_BETWEEN_FRAME_EVENTS) {
-                LOG.info("Too many frames in time interval, did not queue!");
-                return;
-            }
             MatOfByte jpg = new MatOfByte();
             Highgui.imencode(".jpg", frame, jpg);
-            if (!queue.offer(new ItemS3(jpg.toArray(), kind)))
+            if (!queue.offer(new ItemS3(jpg.toArray(), id)))
                 LOG.error("Queue is full, lost frame!");
         } catch (Exception e) {
             LOG.error("Exception", e);
         }
     }
 
-    public boolean IsHeartBeatNeeded() {
-        if (System.currentTimeMillis() - lastUploadedTime > HEART_BEAT_TIME) return true;
-        return false;
-    }
 
 }
 

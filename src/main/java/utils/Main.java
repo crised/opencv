@@ -1,9 +1,7 @@
 package utils;
 
 import local.Feeder;
-import local.Human;
 import local.Periodic;
-import local.Vehicle;
 import net.Consumer;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -32,14 +30,10 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         //checkOpenCV();
-        final WriteToDisk writeToDisk = new WriteToDisk();
-
+        new Thread(new Feeder()).start();
         final Consumer consumer = new Consumer(new LinkedBlockingQueue(100));
         new Thread(consumer).start();
-        new Thread(new Feeder()).start();
-        new Thread(new Human(consumer, writeToDisk)).start();
-        new Thread(new Vehicle(consumer, writeToDisk)).start();
-        new Thread(new Periodic(consumer, writeToDisk)).start();
+        new Thread(new Periodic(consumer)).start();
     }
 
 

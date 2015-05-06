@@ -9,10 +9,12 @@ import org.opencv.core.Mat;
 public final class IMats {
 
     private final Mat frame, mask; //final allow variable to instantiate only once
+    private final long timestamp;
 
     public IMats(Mat frame, Mat mask) {
         this.frame = frame;
         this.mask = mask;
+        this.timestamp = System.currentTimeMillis();
     }
 
     public Mat getFrame() {
@@ -21,5 +23,9 @@ public final class IMats {
 
     public Mat getMask() {
         return mask;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 }

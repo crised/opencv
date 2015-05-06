@@ -22,12 +22,14 @@ public class Feeder implements Runnable {
     private Mat frame, mask, blur; //Feeder frameReady
     private BackgroundSubtractorMOG2 bS;
     private org.opencv.highgui.VideoCapture vCap;
+    private Core cvCore;
 
     public Feeder() {
         this.frame = new Mat();
         this.mask = new Mat();
         this.blur = new Mat();
         this.bS = new BackgroundSubtractorMOG2();
+        this.cvCore = new Core();
     }
 
     @Override
@@ -39,9 +41,9 @@ public class Feeder implements Runnable {
             //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
                 Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
-                if (!InetAddress.getByName(IP_ADDRESS).isReachable(5_000)) {
+                if (!InetAddress.getByName(IP_ADDRESS).isReachable(10_000)) {
                     LOG.error("Camera not reachable");
-                    Thread.sleep(5000);
+                    Thread.sleep(10_000);
                     continue;
                 }
                 if (!vCap.read(frame)) {
@@ -58,8 +60,10 @@ public class Feeder implements Runnable {
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
-                iMats = new IMats(frame, mask);
-
+                if (dayNight.isDay() && !
+                        (cvCore.countNonZero(iMats.getMask()) > LOWER_BOUND_PIXELS
+                                && cvCore.countNonZero(iMats.getMask()) < UPPER_BOUND_PIXELS)) continue;
+                iMats = new IMats(frame, mask); //could post duplicates
             }
         } catch (InterruptedException e) {
             LOG.error("Thread Exception", e);

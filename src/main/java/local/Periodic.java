@@ -3,9 +3,6 @@ package local;
 import net.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.DayNight;
-import utils.IMats;
-import utils.WriteToDisk;
 
 
 import static utils.Consts.*;
@@ -19,11 +16,10 @@ public class Periodic implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(CL_TELEMATIC);
 
     private Consumer consumer;
-    private WriteToDisk writeToDisk;
+    private long lastTimestamp;
 
-    public Periodic(Consumer consumer, WriteToDisk writeToDisk) {
+    public Periodic(Consumer consumer) {
         this.consumer = consumer;
-        this.writeToDisk = writeToDisk;
     }
 
     @Override
@@ -35,10 +31,19 @@ public class Periodic implements Runnable {
                     LOG.info("waiting frame list");
                     Thread.sleep(10000);
                     continue;
-                }//heartbeat image could be same interval day and night.
-                if (consumer.IsHeartBeatNeeded()) consumer.queueItem(iMats.getFrame(), PERIODIC_KIND);
-                if (dayNight.isDay()) continue;
-                consumer.queueItem(iMats.getFrame(), PERIODIC_KIND);
+                }
+                if (lastTimestamp == iMats.getTimestamp()) {
+                    LOG.info("duplicated image, not uploading;");
+                    continue;
+                }
+                lastTimestamp = iMats.getTimestamp();
+                //day mode:
+                if (dayNight.isDay()) {
+                    consumer.queueItem(iMats.getFrame(), iMats.getTimestamp() + PERIODIC_DAY_KIND);
+                    Thread.sleep(PERIODIC_DAY_MODE);
+                    continue;
+                }
+                consumer.queueItem(iMats.getFrame(), iMats.getTimestamp() + PERIODIC_NIGHT_KIND);
                 Thread.sleep(PERIODIC_NIGHT_MODE);
             } catch (InterruptedException e) {
                 LOG.error("Thread Exception", e);
