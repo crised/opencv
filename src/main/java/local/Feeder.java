@@ -60,7 +60,7 @@ public class Feeder implements Runnable {
                 bS.apply(blur, mask, -1);
                 Imgproc.erode(mask, mask, new Mat());
                 Imgproc.dilate(mask, mask, new Mat());
-                if (dayNight.isDay() && !
+                if (dayNight.isDay() && !//npe
                         (cvCore.countNonZero(mask) > LOWER_BOUND_PIXELS
                                 && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS)) continue;
                 iMats = new IMats(frame, mask); //could post duplicates
