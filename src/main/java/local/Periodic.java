@@ -24,6 +24,7 @@ public class Periodic implements Runnable {
 
     @Override
     public void run() {
+        LOG.info("Periodic Thread Started");
         while (true) {
             try {
                 Thread.sleep(PERIODIC_DELAY);
@@ -34,6 +35,7 @@ public class Periodic implements Runnable {
                 }
                 if (lastTimestamp == iMats.getTimestamp()) {
                     LOG.info("duplicated image, not uploading;");
+                    Thread.sleep(PERIODIC_DAY_MODE);
                     continue;
                 }
                 lastTimestamp = iMats.getTimestamp();
@@ -52,6 +54,4 @@ public class Periodic implements Runnable {
             }
         }
     }
-
-
 }

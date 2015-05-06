@@ -26,5 +26,4 @@ public final class Consts {
     public static final double LONGITUDE = -71.0147265;
     public static final String PERIODIC_DAY_KIND = "d";
     public static final String PERIODIC_NIGHT_KIND = "n";
-
 }

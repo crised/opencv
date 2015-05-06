@@ -4,7 +4,7 @@ import org.opencv.core.Mat;
 
 /**
  * Created by crised on 4/28/15.
- * Immutable Mats, final class -> can't be extended, final member -> can instanstiate only once - reference does not change.
+ * Immutable Mats, final class -> can't be extended, final member -> can instanstiated only once - reference does not change.
  */
 public final class IMats {
 
