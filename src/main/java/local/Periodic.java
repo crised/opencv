@@ -34,12 +34,12 @@ public class Periodic implements Runnable {
                     continue;
                 }
                 if (lastTimestamp == iMats.getTimestamp()) {
-                    LOG.info("duplicated image, not uploading;");
+                    LOG.info("duplicated image, not uploading");
                     Thread.sleep(PERIODIC_DAY_MODE);
                     continue;
                 }
                 lastTimestamp = iMats.getTimestamp();
-                //day mode:
+
                 if (dayNight.isDay()) {
                     consumer.queueItem(iMats.getFrame(), iMats.getTimestamp() + PERIODIC_DAY_KIND);
                     Thread.sleep(PERIODIC_DAY_MODE);

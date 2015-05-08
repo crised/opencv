@@ -30,15 +30,16 @@ public class Feeder implements Runnable {
         this.blur = new Mat();
         this.bS = new BackgroundSubtractorMOG2();
         this.cvCore = new Core();
+        this.vCap = new org.opencv.highgui.VideoCapture();
+        this.vCap.open(IP_STREAM_ADDRESS);
+
+
     }
 
     @Override
     public void run() {
         LOG.info("Feeder Started");
         try {
-            setVideoCapture();
-            Thread.sleep(IP_RETRY_INTERVAL);
-            //LOG.info("Frame Width " + vCap.get(Highgui.CV_CAP_PROP_FRAME_WIDTH));
             while (true) {
                 Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
                 if (!InetAddress.getByName(IP_ADDRESS).isReachable(10_000)) {
@@ -46,10 +47,11 @@ public class Feeder implements Runnable {
                     Thread.sleep(10_000);
                     continue;
                 }
-                if (!vCap.read(frame)) {
+                if (!vCap.read(frame) || !vCap.isOpened()) {
                     LOG.error("Couldn't read Video Stream");
-                    setVideoCapture();
                     Thread.sleep(IP_RETRY_INTERVAL);
+                    vCap = new org.opencv.highgui.VideoCapture();
+                    vCap.open(IP_STREAM_ADDRESS);
                     continue;
                 }
                 if (!dayNight.isDay()) {
@@ -72,11 +74,5 @@ public class Feeder implements Runnable {
         }
     }
 
-
-    private void setVideoCapture() {
-        this.vCap = new org.opencv.highgui.VideoCapture();
-        this.vCap.open(IP_STREAM_ADDRESS);
-        if (!vCap.isOpened()) LOG.error("Couldn't open Video Stream");
-    }
 
 }
