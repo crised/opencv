@@ -15,7 +15,7 @@ public final class Consts {
     public static final String BUCKET_NAME = "telematic.apu";
     public static final String IP_ADDRESS = "192.168.1.10";
     public static final String IP_STREAM_ADDRESS = "http://" + IP_ADDRESS + "/videostream.cgi?user=admin&pwd=admin";
-    public static final int IP_RETRY_INTERVAL = 4_000;
+    public static final int IP_RETRY_INTERVAL = 10_000;
     public static final int FEEDER_DELAY = 500;
     public static final int PERIODIC_DELAY = 10_000;
     public static final long PERIODIC_NIGHT_MODE = 30 * 60 * 1_000; //30 Minutes

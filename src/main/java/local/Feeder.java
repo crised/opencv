@@ -42,9 +42,9 @@ public class Feeder implements Runnable {
         while (true) {
             try {
                 Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
-                if (!InetAddress.getByName(IP_ADDRESS).isReachable(10_000)) {
-                    LOG.error("Camera not reachable");
-                    Thread.sleep(10_000);
+                if (!InetAddress.getByName(IP_ADDRESS).isReachable(IP_RETRY_INTERVAL)) {
+                    LOG.error("Camera IP not reachable");
+                    Thread.sleep(IP_RETRY_INTERVAL);
                     continue;
                 }
                 if (!vCap.read(frame) || !vCap.isOpened()) {
@@ -67,9 +67,19 @@ public class Feeder implements Runnable {
                                 && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS)) continue;
                 iMats = new IMats(frame, mask); //could post duplicates
             } catch (SocketException e) {
-                LOG.error("Cam is not reacheable!", e.getMessage());
+                try {
+                    LOG.error("Exception: Cam is not reachable!", e.getMessage());
+                    Thread.sleep(IP_RETRY_INTERVAL);
+                } catch (InterruptedException ex) {
+                    LOG.error("interrupted Exception", ex);
+                }
             } catch (Exception e) {
-                LOG.error("Exception", e);
+                try {
+                    LOG.error("Exception", e.getMessage());
+                    Thread.sleep(IP_RETRY_INTERVAL);
+                } catch (InterruptedException ex) {
+                    LOG.error("interrupted Exception", ex);
+                }
             }
         }
 
