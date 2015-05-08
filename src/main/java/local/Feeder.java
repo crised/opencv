@@ -9,6 +9,7 @@ import utils.IMats;
 
 
 import java.net.InetAddress;
+import java.net.SocketException;
 
 import static utils.Consts.*;
 
@@ -32,15 +33,14 @@ public class Feeder implements Runnable {
         this.cvCore = new Core();
         this.vCap = new org.opencv.highgui.VideoCapture();
         this.vCap.open(IP_STREAM_ADDRESS);
-
-
     }
 
     @Override
     public void run() {
         LOG.info("Feeder Started");
-        try {
-            while (true) {
+
+        while (true) {
+            try {
                 Thread.sleep(FEEDER_DELAY); // 0 delay too fast in x220
                 if (!InetAddress.getByName(IP_ADDRESS).isReachable(10_000)) {
                     LOG.error("Camera not reachable");
@@ -66,12 +66,14 @@ public class Feeder implements Runnable {
                         (cvCore.countNonZero(mask) > LOWER_BOUND_PIXELS
                                 && cvCore.countNonZero(mask) < UPPER_BOUND_PIXELS)) continue;
                 iMats = new IMats(frame, mask); //could post duplicates
+            } catch (SocketException e) {
+                LOG.error("Cam is not reacheable!", e.getMessage());
+            } catch (Exception e) {
+                LOG.error("Exception", e);
             }
-        } catch (InterruptedException e) {
-            LOG.error("Thread Exception", e);
-        } catch (Exception e) {
-            LOG.error("Other Exception", e);
         }
+
+
     }
 
 
